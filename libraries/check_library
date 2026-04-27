@@ -1,0 +1,4 @@
+check_minimal|check_minimal {{TENANT}} {{KVNR}} {{ENV}}
+
+fast_check|fast_check {{TENANT}} {{KVNR}} {{ENV}}
+

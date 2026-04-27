@@ -1,0 +1,44 @@
+select_all_1|SELECT * \
+  FROM "{{TABLE}}" \
+  | db3 -e prod -s ccm
+
+select_columns|SELECT "{{COLUMNS}}" \
+  FROM "{{TABLE}}"
+
+select_where|SELECT * \
+  FROM "{{TABLE}}" \
+  WHERE "{{COLUMN}}" = '{{VALUE}}'
+
+select_order|SELECT * \
+  FROM "{{TABLE}}" \
+  ORDER BY "{{COLUMN}}" {{DIRECTION}}
+
+select_limit|SELECT * \
+  FROM "{{ENV}}.{{TABLE}}" \
+  LIMIT {{LIMIT}} OFFSET {{OFFSET}}
+
+select_join|SELECT a.*, b.* \
+  FROM "{{TABLE_A}}" a \
+  JOIN "{{TABLE_B}}" b \
+  ON a."{{JOIN_COL}}" = b."{{JOIN_COL}}"
+
+select_group|SELECT "{{COLUMN}}", COUNT(*) \
+  FROM "{{TABLE}}" \
+  GROUP BY "{{COLUMN}}" \
+  HAVING COUNT(*) > {{MIN_COUNT}}
+
+select_distinct|SELECT DISTINCT "{{COLUMN}}" \
+  FROM "{{TABLE}}"
+
+select_sum_avg|SELECT SUM("{{COLUMN}}") as total, \
+  AVG("{{COLUMN}}") as average \
+  FROM "{{TABLE}}" \
+  WHERE "{{FILTER_COL}}" = '{{FILTER_VAL}}'
+
+select_subquery|SELECT * \
+  FROM "{{TABLE}}" \
+  WHERE "{{COLUMN}}" IN ( \
+    SELECT "{{SUB_COL}}" \
+    FROM "{{SUB_TABLE}}" \
+    WHERE "{{SUB_FILTER}}" = '{{SUB_VAL}}' \
+  )

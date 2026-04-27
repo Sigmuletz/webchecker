@@ -1,0 +1,35 @@
+Prod-BE-Z1|connect3 -e  prod -d z1 -c be -g
+
+Prod-BE-Z2|connect3 -e  prod -d z2 -c be -g
+
+Prod-BE-Z3|connect3 -e  prod -d z3 -c be -g
+
+Prod-DMZ-Z1|connect3 -e prod -d z1 -c dmz -g
+
+Prod-DMZ-Z2|connect3 -e prod -d z2 -c dmz -g
+
+Prod-DMZ-Z3|connect3 -e prod -d z3 -c dmz -g
+
+Prod-Tee-Z1|connect3 -e prod -d z1 -c tee -g
+
+Prod-Tee-Z2|connect3 -e prod -d z2 -c tee -g
+
+Prod-Tee-Z3|connect3 -e prod -d z3 -c tee -g
+
+PreProd-BE-Z1|connect3 -e preprod -d z1 -c be -g
+
+PreProd-BE-Z2|connect3 -e preprod -d z2 -c be -g
+
+PreProd-BE-Z3|connect3 -e preprod -d z3 -c be -g
+
+PreProd-DMZ-Z1|connect3 -e preprod -d z1 -c dmz -g
+
+PreProd-DMZ-Z2|connect3 -e preprod -d z2 -c dmz -g
+
+PreProd-DMZ-Z3|connect3 -e preprod -d z3 -c dmz -g
+
+PreProd-Tee-Z1|connect3 -e preprod -d z1 -c tee -g
+
+PreProd-Tee-Z2|connect3 -e preprod -d z2 -c tee -g
+
+PreProd-Tee-Z3|connect3 -e preprod -d z3 -c tee -g

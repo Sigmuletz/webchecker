@@ -1,0 +1,29 @@
+api_gateway_8080|oc port-forward api-gateway-7f8d9b \
+  8080:8080 -n production
+
+auth_service_9000|oc port-forward auth-service-z2x1y \
+  9000:9000 -n production
+
+payment_worker_5000|oc port-forward payment-worker-a1b2c \
+  5000:5000 -n staging
+
+order_manager_6000|oc port-forward order-manager-m9n8b \
+  6000:6000 -n staging
+
+db_proxy_5432|oc port-forward db-proxy-v5k4j \
+  5432:5432 -n infrastructure
+
+redis_cache_6379|oc port-forward redis-cache-h1g2f \
+  6379:6379 -n cache-system
+
+prometheus_9090|oc port-forward prometheus-exporter-s5t6u \
+  9090:9090 -n monitoring
+
+grafana_3000|oc port-forward grafana-p2q1r \
+  3000:3000 -n monitoring
+
+ingress_controller_8443|oc port-forward ingress-controller-x9y8z \
+  8443:8443 -n openshift-ingress
+
+web_frontend_80|oc port-forward web-frontend-d4e5f \
+  8080:80 -n production

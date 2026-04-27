@@ -1,0 +1,29 @@
+api_gateway|oc rsh api-gateway-7f8d9b \
+  -n production
+
+auth_service|oc rsh auth-service-z2x1y \
+  -n production
+
+payment_worker|oc rsh payment-worker-a1b2c \
+  -n staging
+
+order_manager|oc rsh order-manager-m9n8b \
+  -n staging
+
+db_proxy|oc rsh db-proxy-v5k4j \
+  -n infrastructure
+
+logging_agent|oc rsh logging-agent-p3q2r \
+  -n infrastructure
+
+cache_node|oc rsh redis-cache-h1g2f \
+  -n cache-system
+
+metric_exporter|oc rsh prometheus-exporter-s5t6u \
+  -n monitoring
+
+ingress_controller|oc rsh ingress-controller-x9y8z \
+  -n openshift-ingress
+
+web_frontend|oc rsh web-frontend-d4e5f \
+  -n production

@@ -1,0 +1,15 @@
+{
+  "KVSSF_X123456789": {
+    "KVNR": "X123456789",
+    "TENANT": "KVSSF",
+    "ENV": "PU",
+    "BOOL": "true"
+  },
+  "KVS_X123456789": {
+    "KVNR": "X123456789",
+    "TENANT": "KVS",
+    "ENV": "PU",
+    "USER_PROFIKE": "asdfasdfas",
+    "EMAIL": "aasdfsa@asdf.com"
+  }
+}

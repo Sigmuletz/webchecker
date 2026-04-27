@@ -1,0 +1,27 @@
+get_json|curl -X GET "{{URL}}" \
+  -H "Accept: application/json" -d "{{ENV}}:{{KVNR}}:{{TENANT}}"
+
+post_json|curl -X POST "{{URL}}" \
+  -H "Content-Type: application/json" \
+  -d '{"key":"{{KVNR}}"}'
+
+get_headers|curl -I "{{URL}}"
+
+download_file|curl -O "{{URL}}"
+
+put_file|curl -X PUT \
+  -T "{{FILE}}" \
+  "{{URL}}"
+
+delete_resource|curl -X DELETE "{{URL}}"
+
+auth_get|curl -u "{{USER}}:{{PASS}}" \
+  "{{URL}}"
+
+timeout_get|curl --max-time 5 "{{URL}}"
+
+follow_redirects|curl -L "{{URL}}"
+
+user_agent|curl -A "{{USER_AGENT}}" \
+  -H "X-Requested-With: TUI-Menu" \
+  "{{URL}}"

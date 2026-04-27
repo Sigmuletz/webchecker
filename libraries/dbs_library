@@ -1,0 +1,19 @@
+prod_db|psql -h prod-db.example.com \
+  -U admin \
+  -d production
+
+stage_db|psql -h stage-db.example.com \
+  -U admin \
+  -d staging
+
+dev_db|psql -h localhost \
+  -U dev \
+  -d development
+
+analytics_db|psql -h analytics.example.com \
+  -U analyst \
+  -d stats
+
+backup_db|psql -h backup.example.com \
+  -U backup_user \
+  -d backup_vault
