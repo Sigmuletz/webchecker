@@ -11,5 +11,15 @@
     "ENV": "PU",
     "USER_PROFIKE": "asdfasdfas",
     "EMAIL": "aasdfsa@asdf.com"
+  },
+  "asdfasd_asdfasd": {
+    "KVNR": "asdfasd",
+    "TENANT": "asdfasd",
+    "ENV": "afsdfasd"
+  },
+  "Barmer_B12341": {
+    "KVNR": "B12341",
+    "TENANT": "Barmer",
+    "ENV": "ru-ref"
   }
 }

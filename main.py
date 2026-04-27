@@ -3,6 +3,7 @@ import json
 import os
 import re
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ load_dotenv()
 SCRIPTS_DIR   = Path(os.getenv("SCRIPTS_DIR",   "./scripts")).resolve()
 LIBRARIES_DIR = Path(os.getenv("LIBRARIES_DIR", "./libraries")).resolve()
 SESSIONS_FILE = Path(os.getenv("SESSIONS_FILE", "./sessions.json")).resolve()
+LOGS_DIR      = Path(os.getenv("LOGS_DIR",      "./logs")).resolve()
 AUTH_TOKEN    = os.getenv("AUTH_TOKEN", "changeme")
 HOST          = os.getenv("HOST", "127.0.0.1")
 PORT          = int(os.getenv("PORT", "8000"))
@@ -69,17 +71,40 @@ def parse_library_file(path: Path) -> list:
     return entries
 
 
-async def stream_proc(websocket: WebSocket, proc):
+def _session_log_path(session_id: str) -> Path:
+    safe = re.sub(r'[^a-zA-Z0-9_\-.]', '_', session_id)
+    return LOGS_DIR / (safe + ".jsonl")
+
+
+def _append_session_log(session_id: str, entry: dict):
+    if not session_id:
+        return
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(_session_log_path(session_id), "a") as f:
+        f.write(json.dumps(entry) + "\n")
+
+
+async def stream_proc(websocket: WebSocket, proc, session_id: str = "", run_info: dict = None):
+    log_lines: list = []
+
     async def _stream(pipe, msg_type: str):
         async for line in pipe:
-            await websocket.send_text(json.dumps({
-                "type": msg_type,
-                "data": line.decode(errors="replace"),
-            }))
+            decoded = line.decode(errors="replace")
+            await websocket.send_text(json.dumps({"type": msg_type, "data": decoded}))
+            if session_id:
+                log_lines.append({"t": "o" if msg_type == "stdout" else "e", "d": decoded})
 
     await asyncio.gather(_stream(proc.stdout, "stdout"), _stream(proc.stderr, "stderr"))
     await proc.wait()
     await websocket.send_text(json.dumps({"type": "exit", "data": str(proc.returncode)}))
+
+    if session_id and run_info is not None:
+        _append_session_log(session_id, {
+            **run_info,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "lines": log_lines,
+            "code": proc.returncode,
+        })
 
 
 @app.get("/api/scripts")
@@ -88,6 +113,25 @@ def list_scripts(token: str = Query(...)):
     if not SCRIPTS_DIR.exists():
         return JSONResponse([])
     return JSONResponse(sorted(f.name for f in SCRIPTS_DIR.iterdir() if f.suffix == ".sh" and f.is_file()))
+
+
+@app.get("/api/logs/{session_id}")
+def get_session_log(session_id: str, token: str = Query(...)):
+    check_token(token)
+    path = _session_log_path(session_id)
+    if not path.exists():
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        path.touch()
+        return JSONResponse([])
+    entries = []
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line:
+            try:
+                entries.append(json.loads(line))
+            except Exception:
+                pass
+    return JSONResponse(entries)
 
 
 @app.get("/api/scripts/{script_name}")
@@ -116,7 +160,7 @@ def list_libraries(token: str = Query(...)):
 
 
 @app.websocket("/ws/run/{script_name}")
-async def run_script(websocket: WebSocket, script_name: str, token: str = Query(...)):
+async def run_script(websocket: WebSocket, script_name: str, token: str = Query(...), session_id: str = Query("")):
     if token != AUTH_TOKEN:
         await websocket.close(code=4001)
         return
@@ -134,7 +178,7 @@ async def run_script(websocket: WebSocket, script_name: str, token: str = Query(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        await stream_proc(websocket, proc)
+        await stream_proc(websocket, proc, session_id, {"name": script_name, "cat": None})
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
             proc.kill()
@@ -151,7 +195,7 @@ async def run_script(websocket: WebSocket, script_name: str, token: str = Query(
 
 
 @app.websocket("/ws/exec")
-async def exec_command(websocket: WebSocket, token: str = Query(...)):
+async def exec_command(websocket: WebSocket, token: str = Query(...), session_id: str = Query("")):
     if token != AUTH_TOKEN:
         await websocket.close(code=4001)
         return
@@ -183,12 +227,13 @@ async def exec_command(websocket: WebSocket, token: str = Query(...)):
         if remaining:
             raise ValueError(f"Unresolved params: {remaining}")
 
+        category = lib_path.stem.replace("_library", "").replace("_", " ").upper()
         proc = await asyncio.create_subprocess_shell(
             command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        await stream_proc(websocket, proc)
+        await stream_proc(websocket, proc, session_id, {"name": entry_name, "cat": category})
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
@@ -206,7 +251,7 @@ async def exec_command(websocket: WebSocket, token: str = Query(...)):
 
 
 @app.websocket("/ws/run-with-params/{script_name}")
-async def run_script_with_params(websocket: WebSocket, script_name: str, token: str = Query(...)):
+async def run_script_with_params(websocket: WebSocket, script_name: str, token: str = Query(...), session_id: str = Query("")):
     if token != AUTH_TOKEN:
         await websocket.close(code=4001)
         return
@@ -241,7 +286,7 @@ async def run_script_with_params(websocket: WebSocket, script_name: str, token: 
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        await stream_proc(websocket, proc)
+        await stream_proc(websocket, proc, session_id, {"name": script_name, "cat": None})
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:

@@ -1,4 +1,5 @@
 CLAUDE.md
 .claude
-_pycache__/
-.evn
+__pycache__/
+.env
+logs/

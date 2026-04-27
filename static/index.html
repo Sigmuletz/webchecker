@@ -545,6 +545,7 @@
         </div>
         <button class="session-btn" id="session-save-btn">SAVE</button>
         <button class="session-btn" id="session-del-btn">DEL</button>
+        <button class="session-btn" id="session-new-btn">NEW</button>
       </div>
       <div class="vars-label">Global Variables</div>
       <div class="var-row"><span class="var-key">KVNR</span><input class="var-input" id="gvar-KVNR"   placeholder="A123456789" spellcheck="false" autocomplete="off"/></div>
@@ -864,6 +865,7 @@ function applySession(id){
   setActiveSession(id);
   renderSessionDropdown();
   localStorage.setItem('last_session_id',id);
+  loadSessionLog(id);
 }
 
 async function loadSessions(){
@@ -879,6 +881,43 @@ async function loadSessions(){
 async function restoreLastSession(){
   const lastId=localStorage.getItem('last_session_id');
   if(lastId&&sessions[lastId]) applySession(lastId);
+}
+
+/* ── Session Log ── */
+async function loadSessionLog(id){
+  if(!id||!token) return;
+  try{
+    const res=await fetch(`/api/logs/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}`);
+    if(!res.ok) return;
+    const entries=await res.json();
+    if(!entries.length){
+      output.innerHTML=''; emptyState.style.display='';
+      exitBadge.className=''; exitBadge.textContent='';
+      terminalTitle.innerHTML=`<span>SESSION LOG</span>`;
+      return;
+    }
+    renderSessionLog(entries);
+    outputWrap.scrollTop=outputWrap.scrollHeight;
+  }catch{}
+}
+
+function renderSessionLog(entries){
+  output.innerHTML=''; emptyState.style.display='none';
+  exitBadge.className=''; exitBadge.textContent='';
+  terminalTitle.innerHTML=`<span>SESSION LOG</span>`;
+  entries.forEach(entry=>{
+    appendPromptLine(entry.cat||null, entry.name);
+    const ts=document.createElement('span'); ts.className='line-meta';
+    ts.textContent='['+entry.ts+']\n'; output.appendChild(ts);
+    entry.lines.forEach(l=>{
+      const s=document.createElement('span');
+      s.className=l.t==='o'?'line-stdout':'line-stderr';
+      s.textContent=l.d; output.appendChild(s);
+    });
+    const ex=document.createElement('span'); ex.className='line-meta';
+    ex.textContent='\n[exited with code '+entry.code+']\n\n';
+    output.appendChild(ex);
+  });
 }
 
 async function doSaveSession(id,explicit){
@@ -906,6 +945,13 @@ sessionSaveBtn.addEventListener('click',()=>{
     return;
   }
   doSaveSession(id,true);
+});
+
+document.getElementById('session-new-btn').addEventListener('click',()=>{
+  setActiveSession('');
+  GLOBAL_VAR_KEYS.forEach(k=>{ const el=document.getElementById('gvar-'+k); if(el) el.value=''; });
+  customVars=[]; renderCustomVars();
+  refreshPreviewCmd(); renderSessionDropdown();
 });
 
 sessionDelBtn.addEventListener('click',async()=>{
@@ -1163,12 +1209,14 @@ execBtn.addEventListener('click',()=>{
 });
 
 /* ── Run ── */
+function sidParam(){ return activeSessionId?`&session_id=${encodeURIComponent(activeSessionId)}`:''; }
+
 function runScript(name,itemEl){
   setActive(itemEl,'script'); setRunning(true);
   terminalTitle.innerHTML=`<span>${esc(name)}</span>`;
   hideActionPanel(); clearOutput(); appendPromptLine(null,name);
   const proto=location.protocol==='https:'?'wss:':'ws:';
-  activeWs=new WebSocket(`${proto}//${location.host}/ws/run/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}`);
+  activeWs=new WebSocket(`${proto}//${location.host}/ws/run/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}${sidParam()}`);
   wireWs(activeWs);
 }
 
@@ -1176,7 +1224,7 @@ function runScriptWithParams(name,itemEl,params){
   setActive(itemEl,'script'); setRunning(true);
   clearOutput(); appendPromptLine(null,name);
   const proto=location.protocol==='https:'?'wss:':'ws:';
-  activeWs=new WebSocket(`${proto}//${location.host}/ws/run-with-params/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}`);
+  activeWs=new WebSocket(`${proto}//${location.host}/ws/run-with-params/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}${sidParam()}`);
   activeWs.addEventListener('open',()=>activeWs.send(JSON.stringify({params})));
   wireWs(activeWs);
 }
@@ -1195,7 +1243,7 @@ function execLibraryEntry(filename,entryName,params){
   terminalTitle.innerHTML=`<span class="title-cat">${esc(cat)}</span> / <span>${esc(entryName)}</span>`;
   clearOutput(); appendPromptLine(cat,entryName);
   const proto=location.protocol==='https:'?'wss:':'ws:';
-  activeWs=new WebSocket(`${proto}//${location.host}/ws/exec?token=${encodeURIComponent(token)}`);
+  activeWs=new WebSocket(`${proto}//${location.host}/ws/exec?token=${encodeURIComponent(token)}${sidParam()}`);
   activeWs.addEventListener('open',()=>activeWs.send(JSON.stringify({library:filename,name:entryName,params})));
   wireWs(activeWs);
 }
