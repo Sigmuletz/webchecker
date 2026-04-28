@@ -21,5 +21,10 @@
     "KVNR": "B12341",
     "TENANT": "Barmer",
     "ENV": "ru-ref"
+  },
+  "TK_X981276123": {
+    "KVNR": "X981276123",
+    "TENANT": "TK",
+    "ENV": "ru-dev"
   }
 }

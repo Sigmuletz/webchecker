@@ -296,7 +296,7 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
 
         os.close(slave_fd)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         def _pty_read():
             r, _, _ = _select.select([master_fd], [], [], 0.05)
@@ -320,6 +320,12 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
                     if pid != 0:
                         code = (wstatus >> 8) & 0xFF
                         child_pid = None
+                        # drain remaining PTY output before sending exit
+                        while True:
+                            drain = await loop.run_in_executor(None, _pty_read)
+                            if not drain:
+                                break
+                            await websocket.send_text(json.dumps({"type": "stdout", "data": drain.decode("utf-8", errors="replace")}))
                         await websocket.send_text(json.dumps({"type": "exit", "data": str(code)}))
                         break
             active = False
@@ -394,7 +400,7 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
         params       = data.get("params", {})
 
         lib_path = (LIBRARIES_DIR / library_name).resolve()
-        if not str(lib_path).startswith(str(LIBRARIES_DIR)):
+        if not str(lib_path).startswith(str(LIBRARIES_DIR) + os.sep):
             raise ValueError("Invalid library path")
         if not lib_path.is_file():
             raise ValueError(f"Library not found: {library_name}")
@@ -428,7 +434,7 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
 
         os.close(slave_fd)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         def _pty_read():
             r, _, _ = _select.select([master_fd], [], [], 0.05)
@@ -455,6 +461,15 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
                     if pid != 0:
                         code = (wstatus >> 8) & 0xFF
                         child_pid = None
+                        # drain remaining PTY output before sending exit
+                        while True:
+                            drain = await loop.run_in_executor(None, _pty_read)
+                            if not drain:
+                                break
+                            await websocket.send_text(json.dumps({
+                                "type": "stdout",
+                                "data": drain.decode("utf-8", errors="replace"),
+                            }))
                         await websocket.send_text(json.dumps({"type": "exit", "data": str(code)}))
                         break
             active = False
@@ -520,7 +535,7 @@ async def exec_command(websocket: WebSocket, token: str = Query(...), session_id
         params       = data.get("params", {})
 
         lib_path = (LIBRARIES_DIR / library_name).resolve()
-        if not str(lib_path).startswith(str(LIBRARIES_DIR)):
+        if not str(lib_path).startswith(str(LIBRARIES_DIR) + os.sep):
             raise ValueError("Invalid library path")
         if not lib_path.is_file():
             raise ValueError(f"Library not found: {library_name}")
@@ -659,7 +674,7 @@ async def update_library_entry(lib_name: str, entry_name: str, request: Request,
         raise HTTPException(status_code=400, detail="Template required")
 
     lib_path = (LIBRARIES_DIR / lib_name).resolve()
-    if not str(lib_path).startswith(str(LIBRARIES_DIR)):
+    if not str(lib_path).startswith(str(LIBRARIES_DIR) + os.sep):
         raise HTTPException(status_code=400, detail="Invalid library")
     if not lib_path.is_file():
         raise HTTPException(status_code=404, detail="Library not found")
@@ -700,7 +715,7 @@ async def create_library_entry(lib_name: str, request: Request, token: str = Que
     if not entry_name or not template:
         raise HTTPException(status_code=400, detail="Name and template required")
     lib_path = (LIBRARIES_DIR / lib_name).resolve()
-    if not str(lib_path).startswith(str(LIBRARIES_DIR)):
+    if not str(lib_path).startswith(str(LIBRARIES_DIR) + os.sep):
         raise HTTPException(status_code=400, detail="Invalid library")
     if lib_path.exists():
         entries = parse_library_file(lib_path)
@@ -793,7 +808,7 @@ async def start_job(request: Request, token: str = Query(...)):
         library_name = body.get("library", "")
         entry_name   = body.get("name", "")
         lib_path = (LIBRARIES_DIR / library_name).resolve()
-        if not str(lib_path).startswith(str(LIBRARIES_DIR)):
+        if not str(lib_path).startswith(str(LIBRARIES_DIR) + os.sep):
             raise HTTPException(status_code=400, detail="Invalid library")
         entries = parse_library_file(lib_path)
         entry = next((e for e in entries if e["name"] == entry_name), None)
