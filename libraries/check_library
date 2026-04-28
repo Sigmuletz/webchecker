@@ -2,3 +2,5 @@ check_minimal|check_minimal {{TENANT}} {{KVNR}} {{ENV}}
 
 fast_check|fast_check {{TENANT}} {{KVNR}} {{ENV}}
 
+readstuff|read aa; echo "you said $aa"; \
+read bb; echo "you said $bb and $aa"

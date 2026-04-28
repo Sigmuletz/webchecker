@@ -1,5 +1,6 @@
 get_json|curl -X GET "{{URL}}" \
-  -H "Accept: application/json" -d "{{ENV}}:{{KVNR}}:{{TENANT}}"
+  -H Accept: application/json" -d "{{ENV}}:{{KVNR}}:{{TENANT}}" \
+  -d "aasdfa"
 
 post_json|curl -X POST "{{URL}}" \
   -H "Content-Type: application/json" \

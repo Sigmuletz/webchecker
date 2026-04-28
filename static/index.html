@@ -295,7 +295,7 @@
     background:var(--green-dim);border:1px solid var(--green);color:var(--green);
     border-radius:3px;padding:4px 16px;font-family:var(--mono);
     font-size:11px;font-weight:700;letter-spacing:.1em;
-    cursor:pointer;transition:background .15s;white-space:nowrap;margin-left:auto;
+    cursor:pointer;transition:background .15s;white-space:nowrap;
   }
   #exec-btn:hover:not(:disabled){background:var(--green-mid)}
   #exec-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -472,6 +472,124 @@
   }
   #add-var-btn:hover{border-color:var(--border-hi);color:var(--text)}
 
+  /* ── STATUS SECTION ── */
+  #status-section{
+    padding:9px 13px 11px;border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .status-val{
+    flex:1;font-family:var(--mono);font-size:11px;color:var(--text-hi);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .status-val.na{color:var(--text-dim);font-style:italic}
+  .status-val.loading{color:var(--text-dim);animation:pulse 1.2s ease-in-out infinite}
+  #status-reload-btn{
+    background:none;border:none;color:var(--text-dim);font-size:12px;line-height:1;
+    cursor:pointer;padding:0 2px;transition:color .1s;flex-shrink:0;order:-1;
+  }
+  #status-reload-btn:hover{color:var(--green)}
+  #status-reload-btn.spinning{animation:spin .7s linear infinite}
+
+  /* ── BACKGROUND JOBS ── */
+  #bg-section{
+    padding:9px 13px 11px;border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .job-item{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+  .job-item:last-child{margin-bottom:0}
+  .job-dot{
+    width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;
+    box-shadow:0 0 4px var(--green);animation:pulse 1s ease-in-out infinite;
+  }
+  .job-name{
+    font-size:10px;color:var(--text-hi);flex:1;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em;
+  }
+  .job-cat{font-size:9px;color:var(--text-dim);letter-spacing:.04em}
+  .job-time{font-size:9px;color:var(--text-dim);flex-shrink:0}
+  .job-stop-btn{
+    background:none;border:none;color:var(--text-dim);font-size:11px;
+    cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0;transition:color .1s;
+  }
+  .job-stop-btn:hover{color:var(--red)}
+  .no-jobs-msg{font-size:10px;color:var(--text-dim);font-style:italic}
+  #bg-btn{
+    background:var(--yellow-dim);border:1px solid var(--yellow);color:var(--yellow);
+    border-radius:3px;padding:4px 14px;font-family:var(--mono);
+    font-size:11px;font-weight:700;letter-spacing:.1em;
+    cursor:pointer;transition:background .15s;white-space:nowrap;
+  }
+  #bg-btn:hover:not(:disabled){background:rgba(255,209,102,.18)}
+  #bg-btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* ── EDIT MODE ── */
+  .action-btns{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+  #edit-btn,#edit-save-btn,#edit-cancel-btn{
+    background:none;border:1px solid var(--border);color:var(--text-dim);
+    border-radius:3px;padding:4px 12px;font-family:var(--mono);
+    font-size:11px;font-weight:700;letter-spacing:.08em;
+    cursor:pointer;white-space:nowrap;transition:border-color .15s,color .15s,background .15s;
+  }
+  #edit-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+  #edit-save-btn{color:var(--green)}
+  #edit-save-btn:hover:not(:disabled){border-color:var(--green);background:var(--green-dim)}
+  #edit-save-btn:disabled{opacity:.4;cursor:not-allowed}
+  #edit-cancel-btn:hover{border-color:var(--border-hi);color:var(--text)}
+  #edit-template-row{
+    display:none;padding:6px 16px 10px;border-top:1px solid var(--border);
+  }
+  .edit-row-label{
+    font-size:9px;letter-spacing:.14em;color:var(--text-dim);text-transform:uppercase;
+    padding-bottom:5px;
+  }
+  #edit-template-area{
+    width:100%;height:110px;background:var(--bg);border:1px solid var(--border);
+    border-radius:4px;padding:8px 10px;color:var(--text-hi);font-family:var(--mono);
+    font-size:12px;line-height:1.6;outline:none;resize:vertical;transition:border-color .15s;
+  }
+  #edit-template-area:focus{border-color:var(--border-hi)}
+  #edit-error{font-size:10px;color:var(--red);margin-top:5px;display:none}
+  #edit-error.visible{display:block}
+  .preview-label{
+    font-size:9px;letter-spacing:.14em;color:var(--text-dim);text-transform:uppercase;
+    padding:6px 16px 0;
+  }
+
+  /* ── INTERACTIVE ── */
+  #interactive-btn{
+    background:var(--cyan-dim);border:1px solid var(--cyan);color:var(--cyan);
+    border-radius:3px;padding:4px 14px;font-family:var(--mono);
+    font-size:11px;font-weight:700;letter-spacing:.1em;
+    cursor:pointer;transition:background .15s;white-space:nowrap;
+  }
+  #interactive-btn:hover:not(:disabled){background:rgba(56,189,248,.18)}
+  #interactive-btn:disabled{opacity:.4;cursor:not-allowed}
+  #interactive-bar{
+    display:none;padding:8px 14px;border-top:1px solid var(--border);
+    background:var(--surface);flex-shrink:0;align-items:center;gap:7px;
+  }
+  #interactive-bar.visible{display:flex}
+  #interactive-prompt{color:var(--cyan);font-weight:700;flex-shrink:0;font-size:13px}
+  #interactive-input{
+    flex:1;background:var(--bg);border:1px solid var(--border);border-radius:3px;
+    padding:5px 9px;color:var(--text-hi);font-family:var(--mono);font-size:12px;
+    outline:none;transition:border-color .15s;
+  }
+  #interactive-input:focus{border-color:var(--cyan-dim)}
+  #interactive-input::placeholder{color:var(--text-dim)}
+  #interactive-send-btn{
+    background:var(--cyan-dim);border:1px solid var(--cyan);color:var(--cyan);
+    border-radius:3px;padding:4px 12px;font-family:var(--mono);font-size:11px;
+    font-weight:700;letter-spacing:.08em;cursor:pointer;white-space:nowrap;
+    transition:background .15s;
+  }
+  #interactive-send-btn:hover{background:rgba(56,189,248,.18)}
+  #interactive-close-btn{
+    background:var(--red-dim);border:1px solid var(--red);color:var(--red);
+    border-radius:3px;padding:4px 12px;font-family:var(--mono);font-size:11px;
+    font-weight:700;letter-spacing:.08em;cursor:pointer;white-space:nowrap;
+    transition:background .15s;
+  }
+  #interactive-close-btn:hover{background:rgba(255,77,106,.25)}
+
   /* ── RESPONSIVE ── */
   @media(max-width:640px){
     #app{flex-direction:column}
@@ -531,9 +649,19 @@
         <div class="logo-icon">
           <svg viewBox="0 0 14 14" fill="none"><polyline points="2,4 6,7 2,10" stroke="#3dff8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="10" x2="12" y2="10" stroke="#3dff8f" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
-        <div class="logo-text">SHELLGATE v.01</div>
+        <div class="logo-text">SHELLGATE v.02</div>
       </div>
       <button id="settings-btn">⚙ TOKEN</button>
+    </div>
+
+    <div id="status-section">
+      <div class="vars-label">Status <button id="status-reload-btn" title="Refresh status">↺</button></div>
+      <div id="status-list"></div>
+    </div>
+
+    <div id="bg-section">
+      <div class="vars-label">Background</div>
+      <div id="bg-list"><span class="no-jobs-msg">no active jobs</span></div>
     </div>
 
     <div id="vars-section">
@@ -601,9 +729,22 @@
     <div id="action-panel">
       <div id="action-params-row">
         <div id="inline-params-wrap"></div>
-        <button id="exec-btn" disabled>▶ EXECUTE</button>
+        <div class="action-btns">
+          <button id="edit-btn" style="display:none">✎ EDIT</button>
+          <button id="edit-cancel-btn" style="display:none">CANCEL</button>
+          <button id="edit-save-btn" style="display:none">✓ SAVE</button>
+          <button id="exec-btn" disabled>▶ EXECUTE</button>
+          <button id="interactive-btn" disabled>⚡ INTERACTIVE</button>
+          <button id="bg-btn" disabled>▶ BG</button>
+        </div>
+      </div>
+      <div id="edit-template-row">
+        <div class="edit-row-label">TEMPLATE</div>
+        <textarea id="edit-template-area" spellcheck="false" autocomplete="off"></textarea>
+        <div id="edit-error"></div>
       </div>
       <div id="preview-section">
+        <div class="preview-label" id="preview-label" style="display:none">PREVIEW</div>
         <div id="action-preview"><code id="preview-cmd"></code></div>
       </div>
     </div>
@@ -614,6 +755,12 @@
         <div class="empty-text">No output yet</div>
       </div>
       <pre id="output"></pre>
+    </div>
+    <div id="interactive-bar">
+      <span id="interactive-prompt">❯</span>
+      <input id="interactive-input" type="text" spellcheck="false" autocomplete="off" placeholder="enter command…"/>
+      <button id="interactive-send-btn">SEND</button>
+      <button id="interactive-close-btn">✕ CLOSE SESSION</button>
     </div>
   </div>
 </div>
@@ -635,6 +782,9 @@ let sessions   = {};
 let customVars = []; // [{id, key, value}]
 let varIdCounter = 0;
 let favorites  = { scripts: [], libraries: {} };
+let editMode   = false;
+let editOriginalTemplate = '';
+let bgPollTimer = null;
 
 /* ── Elements ── */
 const tokenModal   = document.getElementById('token-modal');
@@ -665,8 +815,22 @@ const sessionDropdown= document.getElementById('session-dropdown');
 const sessionSaveBtn = document.getElementById('session-save-btn');
 const sessionDelBtn  = document.getElementById('session-del-btn');
 let   activeSessionId= '';
-const customVarsEl   = document.getElementById('custom-vars');
-const addVarBtn      = document.getElementById('add-var-btn');
+const customVarsEl    = document.getElementById('custom-vars');
+const addVarBtn       = document.getElementById('add-var-btn');
+const editBtn            = document.getElementById('edit-btn');
+const editSaveBtn        = document.getElementById('edit-save-btn');
+const editCancelBtn      = document.getElementById('edit-cancel-btn');
+const editTemplateRow    = document.getElementById('edit-template-row');
+const editTemplateArea   = document.getElementById('edit-template-area');
+const editError          = document.getElementById('edit-error');
+const previewLabel       = document.getElementById('preview-label');
+const interactiveBtn     = document.getElementById('interactive-btn');
+const bgBtn              = document.getElementById('bg-btn');
+const bgList             = document.getElementById('bg-list');
+const interactiveBar     = document.getElementById('interactive-bar');
+const interactiveInput   = document.getElementById('interactive-input');
+const interactiveSendBtn = document.getElementById('interactive-send-btn');
+const interactiveCloseBtn= document.getElementById('interactive-close-btn');
 
 /* ── Favorites ── */
 function loadFavorites(){
@@ -986,9 +1150,11 @@ async function submitToken(){
     loadLibraries().then(renderFavoritesSection);
     await loadSessions();
     restoreLastSession();
+    loadStatus().then(startStatusAutoRefresh);
+    refreshJobs(); startBgPoll();
   }catch{showTokenModal(true);}
 }
-settingsBtn.addEventListener('click',()=>{ localStorage.removeItem('auth_token'); token=''; showTokenModal(false); });
+settingsBtn.addEventListener('click',()=>{ localStorage.removeItem('auth_token'); token=''; if(statusRefreshTimer) clearInterval(statusRefreshTimer); if(bgPollTimer) clearInterval(bgPollTimer); showTokenModal(false); });
 
 /* ── Section Toggle ── */
 scriptsSectionHeader.addEventListener('click',e=>{
@@ -1096,6 +1262,7 @@ function buildLibSection(filename,lib){
 
 /* ── Selection → Action Panel ── */
 async function selectScript(name,itemEl){
+  if(editMode) exitEditMode(true);
   try{
     const res=await fetch('/api/scripts/'+encodeURIComponent(name)+'?token='+encodeURIComponent(token));
     if(!res.ok) return;
@@ -1107,6 +1274,7 @@ async function selectScript(name,itemEl){
 }
 
 function selectLibraryEntry(filename,category,entry){
+  if(editMode) exitEditMode(true);
   selected={type:'library',filename,entry};
   showActionPanel('library',entry.name,category,entry);
 }
@@ -1117,6 +1285,13 @@ function showActionPanel(type,name,cat,entry){
   else
     terminalTitle.innerHTML=`<span class="title-cat">${esc(cat)}</span> / <span>${esc(name)}</span>`;
   exitBadge.className=''; exitBadge.textContent='';
+  editBtn.style.display='inline-block';
+  execBtn.style.display='inline-block';
+  interactiveBtn.style.display='inline-block';
+  bgBtn.style.display='inline-block';
+  editSaveBtn.style.display='none'; editCancelBtn.style.display='none';
+  editTemplateRow.style.display='none'; previewLabel.style.display='none';
+  editError.classList.remove('visible');
   buildInlineParams(entry);
   refreshPreviewCmd();
   actionPanel.classList.add('visible');
@@ -1125,15 +1300,99 @@ function showActionPanel(type,name,cat,entry){
 }
 
 function hideActionPanel(){
+  exitEditMode(false);
   actionPanel.classList.remove('visible');
+  editBtn.style.display='none';
+  interactiveBtn.style.display='none';
+  bgBtn.style.display='none';
   selected=null;
 }
+
+function enterEditMode(){
+  if(!selected) return;
+  editMode=true;
+  editOriginalTemplate=selected.entry.template;
+  editTemplateArea.value=selected.entry.template;
+  editError.classList.remove('visible'); editError.textContent='';
+  editTemplateRow.style.display='block';
+  previewLabel.style.display='block';
+  editBtn.style.display='none';
+  editSaveBtn.style.display='inline-block';
+  editCancelBtn.style.display='inline-block';
+  execBtn.style.display='none';
+  interactiveBtn.style.display='none';
+  bgBtn.style.display='none';
+  editTemplateArea.focus();
+}
+
+function exitEditMode(restore){
+  if(!editMode) return;
+  editMode=false;
+  editTemplateRow.style.display='none';
+  previewLabel.style.display='none';
+  editSaveBtn.style.display='none';
+  editCancelBtn.style.display='none';
+  execBtn.style.display='inline-block';
+  interactiveBtn.style.display='inline-block';
+  bgBtn.style.display='inline-block';
+  if(restore&&selected){
+    selected.entry.template=editOriginalTemplate;
+    selected.entry.params=extractParams(editOriginalTemplate);
+    buildInlineParams(selected.entry);
+    refreshPreviewCmd();
+  }
+  if(selected) editBtn.style.display='inline-block';
+}
+
+function extractParams(template){
+  return [...new Set((template.match(/\{\{([A-Z_0-9]+)\}\}/g)||[]).map(m=>m.slice(2,-2)))].sort();
+}
+
+editBtn.addEventListener('click', enterEditMode);
+editCancelBtn.addEventListener('click',()=>exitEditMode(true));
+
+editTemplateArea.addEventListener('input',()=>{
+  if(!selected) return;
+  selected.entry.template=editTemplateArea.value;
+  selected.entry.params=extractParams(editTemplateArea.value);
+  buildInlineParams(selected.entry);
+  refreshPreviewCmd();
+});
+
+editSaveBtn.addEventListener('click',async()=>{
+  if(!selected) return;
+  const newContent=editTemplateArea.value;
+  if(!newContent.trim()){ editError.textContent='Content required.'; editError.classList.add('visible'); return; }
+  editSaveBtn.disabled=true;
+  editError.classList.remove('visible');
+  try{
+    let res;
+    if(selected.type==='library'){
+      res=await fetch(`/api/libraries/${encodeURIComponent(selected.filename)}/entries/${encodeURIComponent(selected.entry.name)}?token=${encodeURIComponent(token)}`,{
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({template:newContent.trim()})
+      });
+    } else {
+      res=await fetch(`/api/scripts/${encodeURIComponent(selected.name)}?token=${encodeURIComponent(token)}`,{
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({content:newContent})
+      });
+    }
+    if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.detail||`Error ${res.status}`); }
+    selected.entry.template=newContent;
+    selected.entry.params=extractParams(newContent);
+    exitEditMode(false);
+    editBtn.style.display='inline-block';
+    if(selected.type==='library'){ await loadLibraries(); renderFavoritesSection(); }
+  }catch(e){ editError.textContent=e.message; editError.classList.add('visible'); }
+  finally{ editSaveBtn.disabled=false; }
+});
 
 function buildInlineParams(entry){
   paramsWrap.innerHTML='';
   if(entry.params.length===0){
     paramsWrap.innerHTML='<span class="no-params-msg">no parameters</span>';
-    execBtn.disabled=false;
+    execBtn.disabled=false; interactiveBtn.disabled=false; bgBtn.disabled=false;
     return;
   }
   const globals=getGlobalVars();
@@ -1160,7 +1419,10 @@ function buildInlineParams(entry){
 
 function updateExecBtn(){
   if(!selected) return;
-  execBtn.disabled=selected.entry.params.some(p=>!getInlineParam(p))||running;
+  const paramsMissing=selected.entry.params.some(p=>!getInlineParam(p));
+  execBtn.disabled=paramsMissing||running;
+  interactiveBtn.disabled=paramsMissing||running;
+  bgBtn.disabled=paramsMissing;
 }
 
 function getInlineParam(key){
@@ -1208,6 +1470,22 @@ execBtn.addEventListener('click',()=>{
   }
 });
 
+interactiveBtn.addEventListener('click',()=>{
+  if(!selected||running||interactiveBtn.disabled) return;
+  const params=getCurrentInlineParams();
+  let ok=true;
+  selected.entry.params.forEach(p=>{
+    if(!params[p]){ const el=document.getElementById('iparam-'+p); if(el) el.classList.add('missing'); ok=false; }
+  });
+  if(!ok) return;
+  if(selected.type==='script'){
+    const{name,itemEl}=selected;
+    runScriptInteractive(name,itemEl,params);
+  } else {
+    execLibraryInteractive(selected.filename,selected.entry.name,params);
+  }
+});
+
 /* ── Run ── */
 function sidParam(){ return activeSessionId?`&session_id=${encodeURIComponent(activeSessionId)}`:''; }
 
@@ -1248,7 +1526,49 @@ function execLibraryEntry(filename,entryName,params){
   wireWs(activeWs);
 }
 
-function wireWs(ws){
+function runScriptInteractive(name,itemEl,params){
+  setActive(itemEl,'script'); setRunning(true);
+  terminalTitle.innerHTML=`<span>${esc(name)}</span> <span style="color:var(--cyan);font-size:9px;letter-spacing:.06em">● LIVE</span>`;
+  clearOutput(); appendPromptLine(null,name);
+  const proto=location.protocol==='https:'?'wss:':'ws:';
+  activeWs=new WebSocket(`${proto}//${location.host}/ws/run-interactive/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}${sidParam()}`);
+  activeWs.addEventListener('open',()=>activeWs.send(JSON.stringify({params})));
+  wireWs(activeWs,true);
+}
+
+function execLibraryInteractive(filename,entryName,params){
+  const cat=libraries[filename]?.category||'';
+  setRunning(true);
+  terminalTitle.innerHTML=`<span class="title-cat">${esc(cat)}</span> / <span>${esc(entryName)}</span> <span style="color:var(--cyan);font-size:9px;letter-spacing:.06em">● LIVE</span>`;
+  clearOutput(); appendPromptLine(cat,entryName);
+  const proto=location.protocol==='https:'?'wss:':'ws:';
+  activeWs=new WebSocket(`${proto}//${location.host}/ws/exec-interactive?token=${encodeURIComponent(token)}${sidParam()}`);
+  activeWs.addEventListener('open',()=>activeWs.send(JSON.stringify({library:filename,name:entryName,params})));
+  wireWs(activeWs,true);
+}
+
+function sendInteractiveInput(){
+  const val=interactiveInput.value;
+  if(!activeWs||!val) return;
+  activeWs.send(JSON.stringify({type:'input',data:val+'\n'}));
+  interactiveInput.value='';
+}
+
+interactiveSendBtn.addEventListener('click',sendInteractiveInput);
+interactiveInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); sendInteractiveInput(); }
+  if(e.ctrlKey&&e.key==='c'){ e.preventDefault(); if(activeWs) activeWs.send(JSON.stringify({type:'input',data:'\x03'})); }
+  if(e.ctrlKey&&e.key==='d'){ e.preventDefault(); if(activeWs) activeWs.send(JSON.stringify({type:'input',data:'\x04'})); }
+});
+interactiveCloseBtn.addEventListener('click',()=>{
+  if(activeWs){ activeWs.send(JSON.stringify({type:'close'})); setTimeout(()=>{ if(activeWs) activeWs.close(); },300); }
+});
+
+function wireWs(ws,interactive=false){
+  if(interactive){
+    interactiveBar.classList.add('visible');
+    setTimeout(()=>interactiveInput.focus(),80);
+  }
   ws.addEventListener('message',e=>{
     let msg; try{msg=JSON.parse(e.data);}catch{return;}
     if(msg.type==='stdout')      appendLine(msg.data,'stdout');
@@ -1262,6 +1582,8 @@ function wireWs(ws){
 
 function handleExit(code){
   setRunning(false);
+  interactiveBar.classList.remove('visible');
+  interactiveInput.value='';
   exitBadge.textContent='EXIT '+code; exitBadge.className=code===0?'ok':'err';
   appendLine('\n[process exited with code '+code+']','meta');
   activeWs=null;
@@ -1311,7 +1633,8 @@ function setRunning(state){
     if(state) el.classList.add('disabled'); else el.classList.remove('disabled');
     if(el.tagName==='INPUT') el.disabled=state;
   });
-  if(state) execBtn.disabled=true; else updateExecBtn();
+  if(state){ execBtn.disabled=true; interactiveBtn.disabled=true; } else updateExecBtn();
+  editBtn.disabled=state;
   killBtn.classList.toggle('visible',state);
 }
 
@@ -1508,6 +1831,121 @@ function setRunning(state){
   filterClear.addEventListener('click',()=>{ filterInput.value=''; applyFilter(); filterInput.focus(); });
 })();
 
+/* ── Background Jobs ── */
+function renderJobs(jobs){
+  bgList.innerHTML='';
+  if(!jobs.length){ bgList.innerHTML='<span class="no-jobs-msg">no active jobs</span>'; return; }
+  jobs.forEach(job=>{
+    const item=document.createElement('div'); item.className='job-item';
+    item.innerHTML=`
+      <span class="job-dot"></span>
+      <span class="job-name" title="${job.cat?esc(job.cat)+' / ':''}">${esc(job.name)}</span>
+      <span class="job-time">${esc(job.started)}</span>
+      <button class="job-stop-btn" title="Stop">■</button>`;
+    item.querySelector('.job-stop-btn').addEventListener('click',()=>stopJob(job.id));
+    bgList.appendChild(item);
+  });
+}
+
+async function refreshJobs(){
+  if(!token) return;
+  try{
+    const res=await fetch(`/api/jobs?token=${encodeURIComponent(token)}`);
+    if(res.ok) renderJobs(await res.json());
+  }catch{}
+}
+
+async function stopJob(id){
+  if(!token) return;
+  try{
+    await fetch(`/api/jobs/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}`,{method:'DELETE'});
+    refreshJobs();
+  }catch{}
+}
+
+function startBgPoll(){
+  if(bgPollTimer) clearInterval(bgPollTimer);
+  bgPollTimer=setInterval(refreshJobs,3000);
+}
+
+bgBtn.addEventListener('click',async()=>{
+  if(!selected||bgBtn.disabled) return;
+  const params=getCurrentInlineParams();
+  let ok=true;
+  selected.entry.params.forEach(p=>{
+    if(!params[p]){ const el=document.getElementById('iparam-'+p); if(el) el.classList.add('missing'); ok=false; }
+  });
+  if(!ok) return;
+  const body=selected.type==='script'
+    ?{type:'script',name:selected.name,params}
+    :{type:'library',library:selected.filename,name:selected.entry.name,params};
+  try{
+    const res=await fetch(`/api/jobs?token=${encodeURIComponent(token)}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+    });
+    if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.detail||'Error'); }
+    await refreshJobs();
+    const orig=bgBtn.textContent;
+    bgBtn.textContent='✓ STARTED';
+    setTimeout(()=>{ bgBtn.textContent=orig; },1200);
+  }catch(e){ console.error('bg job error:',e); }
+});
+
+/* ── Status ── */
+let statusNames = [];
+let statusValues = {};
+let statusRefreshTimer = null;
+
+const statusList      = document.getElementById('status-list');
+const statusReloadBtn = document.getElementById('status-reload-btn');
+
+function renderStatusSection(){
+  statusList.innerHTML='';
+  statusNames.forEach(name=>{
+    const val=statusValues[name];
+    const na=val===undefined||val===null;
+    const loading=val===undefined;
+    const row=document.createElement('div'); row.className='var-row';
+    row.innerHTML=`<span class="var-key">${esc(name)}</span><span class="status-val${loading?' loading':na?' na':''}">` +
+      (loading?'…':na?'N/A':esc(val))+`</span>`;
+    statusList.appendChild(row);
+  });
+}
+
+async function loadStatus(){
+  if(!token) return;
+  try{
+    const res=await fetch(`/api/status?token=${encodeURIComponent(token)}`);
+    if(!res.ok) return;
+    statusNames=await res.json();
+    // show all as loading
+    statusValues={};
+    renderStatusSection();
+    // run all
+    await refreshStatusValues();
+  }catch{}
+}
+
+async function refreshStatusValues(){
+  if(!token||!statusNames.length) return;
+  statusReloadBtn.classList.add('spinning');
+  try{
+    const res=await fetch(`/api/status/run?token=${encodeURIComponent(token)}`);
+    if(!res.ok) return;
+    const data=await res.json();
+    statusNames.forEach(n=>{ statusValues[n]=data[n]??null; });
+    renderStatusSection();
+  }catch{}
+  finally{ statusReloadBtn.classList.remove('spinning'); }
+}
+
+statusReloadBtn.addEventListener('click',e=>{ e.stopPropagation(); refreshStatusValues(); });
+
+function startStatusAutoRefresh(){
+  if(statusRefreshTimer) clearInterval(statusRefreshTimer);
+  statusRefreshTimer=setInterval(refreshStatusValues, 30000);
+}
+
 /* ── Util ── */
 function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1515,7 +1953,7 @@ function esc(s){
 
 /* ── Init ── */
 loadFavorites();
-if(token){ loadScripts(); loadLibraries().then(renderFavoritesSection); loadSessions().then(restoreLastSession); }
+if(token){ loadScripts(); loadLibraries().then(renderFavoritesSection); loadSessions().then(restoreLastSession); loadStatus().then(startStatusAutoRefresh); refreshJobs(); startBgPoll(); }
 else showTokenModal(false);
 
 })();
