@@ -149,11 +149,23 @@
   .section-items{overflow:hidden}
   .sidebar-section.collapsed .section-items{display:none}
 
-  /* ── LIBRARY SECTIONS (hover-expand) ── */
+  /* ── LIBRARY SECTIONS ── */
   .lib-section .section-items{display:none}
-  .lib-section:hover .section-items{display:block}
   .lib-section .section-chevron{transform:rotate(-90deg)}
-  .lib-section:hover .section-chevron{transform:rotate(0deg)}
+  .lib-section.expanded .section-items{display:block}
+  .lib-section.expanded .section-chevron{transform:rotate(0deg)}
+  /* hover mode overrides */
+  #sidebar.lib-hover .lib-section .section-items{display:none}
+  #sidebar.lib-hover .lib-section:hover .section-items{display:block}
+  #sidebar.lib-hover .lib-section .section-chevron{transform:rotate(-90deg)}
+  #sidebar.lib-hover .lib-section:hover .section-chevron{transform:rotate(0deg)}
+  /* toggle button */
+  #lib-hover-toggle{
+    background:none;border:none;color:var(--text-dim);font-size:13px;line-height:1;
+    cursor:pointer;padding:0 3px;margin-left:auto;transition:color .1s;flex-shrink:0;
+  }
+  #lib-hover-toggle.hover-active{color:var(--cyan)}
+  #lib-hover-toggle:hover{color:var(--text)}
 
   /* ── SCRIPT ITEMS ── */
   .script-item{
@@ -619,6 +631,21 @@
   }
   #interactive-close-btn:hover{background:rgba(255,77,106,.25)}
 
+  /* ── DESTINATION ROW ── */
+  #action-dest-row{display:none;padding:4px 16px 8px;border-top:1px solid var(--border)}
+  .dest-row-inner{display:flex;align-items:center;gap:8px}
+  .dest-label{font-size:9px;letter-spacing:.14em;color:var(--text-dim);text-transform:uppercase;flex-shrink:0}
+  #dest-view{font-size:11px;color:var(--cyan);font-family:var(--mono)}
+  .dest-edit-input{
+    background:var(--bg);border:1px solid var(--border);border-radius:3px;
+    padding:3px 8px;color:var(--text-hi);font-family:var(--mono);font-size:11px;
+    outline:none;flex:1;max-width:300px;transition:border-color .15s;
+  }
+  .dest-edit-input:focus{border-color:var(--cyan-dim)}
+  .title-dest{color:var(--text-dim);font-size:10px;margin-left:6px}
+  .title-dest-val{color:var(--cyan)}
+  .prompt-dest{color:var(--cyan);font-size:10px;opacity:.75}
+
   /* ── COMMAND PALETTE ── */
   #palette-modal{
     display:none;position:fixed;inset:0;background:rgba(10,14,19,.78);
@@ -702,6 +729,10 @@
     </div>
     <div class="modal-field-label">NAME</div>
     <input id="create-name-input" class="create-field" spellcheck="false" autocomplete="off" placeholder="my_script"/>
+    <div id="create-dest-row" style="display:none">
+      <div class="modal-field-label">DESTINATION <span style="color:var(--text-dim);font-size:8px">(OPTIONAL)</span></div>
+      <input id="create-dest-input" class="create-field" spellcheck="false" autocomplete="off" placeholder="e.g. pod3 -p monitor-pod"/>
+    </div>
     <div class="modal-field-label" id="create-content-label" style="margin-top:4px">CONTENT</div>
     <textarea id="create-content-area" class="create-textarea" spellcheck="false"></textarea>
     <div id="create-modal-error" class="modal-error"></div>
@@ -733,7 +764,7 @@
         <div class="logo-icon">
           <svg viewBox="0 0 14 14" fill="none"><polyline points="2,4 6,7 2,10" stroke="#3dff8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="10" x2="12" y2="10" stroke="#3dff8f" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
-        <div class="logo-text">SHELLGATE v.03</div>
+        <div class="logo-text">SHELLGATE v.04</div>
       </div>
       <button id="settings-btn">⚙ TOKEN</button>
     </div>
@@ -797,6 +828,7 @@
     <div id="sidebar-footer">
       <div class="status-dot idle" id="status-dot"></div>
       <span class="status-text" id="status-text">IDLE</span>
+      <button id="lib-hover-toggle" title="Library: hover-expand">⊹</button>
     </div>
   </div>
 
@@ -820,6 +852,13 @@
           <button id="exec-btn" disabled>▶ EXECUTE</button>
           <button id="interactive-btn" disabled>⚡ INTERACTIVE</button>
           <button id="bg-btn" disabled>▶ BG</button>
+        </div>
+      </div>
+      <div id="action-dest-row">
+        <div class="dest-row-inner">
+          <span class="dest-label">DESTINATION</span>
+          <span id="dest-view"></span>
+          <input id="dest-edit-input" class="dest-edit-input" style="display:none" placeholder="e.g. pod3 -p monitor-pod" spellcheck="false" autocomplete="off"/>
         </div>
       </div>
       <div id="edit-template-row">
@@ -871,6 +910,8 @@ let varIdCounter = 0;
 let favorites  = { scripts: [], libraries: {} };
 let editMode   = false;
 let editOriginalTemplate = '';
+let editOriginalDestination = '';
+let libHoverMode = localStorage.getItem('lib_hover_mode') !== 'false';
 let bgPollTimer = null;
 let tabs = new Map();
 let activeTabId = 'main';
@@ -922,6 +963,11 @@ const interactiveBar     = document.getElementById('interactive-bar');
 const interactiveInput   = document.getElementById('interactive-input');
 const interactiveSendBtn = document.getElementById('interactive-send-btn');
 const interactiveCloseBtn= document.getElementById('interactive-close-btn');
+const actionDestRow      = document.getElementById('action-dest-row');
+const libHoverToggle     = document.getElementById('lib-hover-toggle');
+const sidebarEl          = document.getElementById('sidebar');
+const destView           = document.getElementById('dest-view');
+const destEditInput      = document.getElementById('dest-edit-input');
 
 /* ── Favorites ── */
 function loadFavorites(){
@@ -1159,8 +1205,9 @@ function renderSessionLog(entries){
   clearOutput('main');
   terminalTitle.innerHTML=`<span>SESSION LOG</span>`;
   entries.forEach(entry=>{
-    appendPromptLine(entry.cat||null,entry.name,'main');
+    appendPromptLine(entry.cat||null,entry.name,'main',entry.dest||'');
     appendLine('['+entry.ts+']\n','meta','main');
+    if(entry.cmd) appendLine('$ '+entry.cmd+'\n','meta','main');
     entry.lines.forEach(l=>{ appendLine(l.d,l.t==='o'?'stdout':'stderr','main'); });
     appendLine('\n[exited with code '+entry.code+']\n\n','meta','main');
   });
@@ -1237,6 +1284,22 @@ async function submitToken(){
   }catch{showTokenModal(true);}
 }
 settingsBtn.addEventListener('click',()=>{ localStorage.removeItem('auth_token'); token=''; if(statusRefreshTimer) clearInterval(statusRefreshTimer); if(bgPollTimer) clearInterval(bgPollTimer); showTokenModal(false); });
+
+/* ── Library Hover Mode ── */
+function applyLibHoverMode(){
+  if(libHoverMode){
+    sidebarEl.classList.add('lib-hover');
+    libHoverToggle.classList.add('hover-active');
+    libHoverToggle.title='Library: hover-expand (click to switch)';
+  } else {
+    sidebarEl.classList.remove('lib-hover');
+    libHoverToggle.classList.remove('hover-active');
+    libHoverToggle.title='Library: click-expand (click to switch)';
+  }
+  localStorage.setItem('lib_hover_mode',String(libHoverMode));
+}
+libHoverToggle.addEventListener('click',()=>{ libHoverMode=!libHoverMode; applyLibHoverMode(); });
+applyLibHoverMode();
 
 /* ── Section Toggle ── */
 scriptsSectionHeader.addEventListener('click',e=>{
@@ -1318,6 +1381,10 @@ function buildLibSection(filename,lib){
   header.querySelector('.section-add-btn').addEventListener('click',e=>{
     e.stopPropagation(); openCreateModal('library',filename,lib.category);
   });
+  header.addEventListener('click',e=>{
+    if(e.target.closest('.section-add-btn')) return;
+    if(!libHoverMode) section.classList.toggle('expanded');
+  });
   const items=document.createElement('div');
   items.className='section-items';
   lib.entries.forEach(entry=>{
@@ -1374,6 +1441,15 @@ function showActionPanel(type,name,cat,entry){
   editSaveBtn.style.display='none'; editCancelBtn.style.display='none';
   editTemplateRow.style.display='none'; previewLabel.style.display='none';
   editError.classList.remove('visible');
+  if(type==='library'&&entry.destination){
+    actionDestRow.style.display='block';
+    destView.innerHTML=renderTemplateHtml(entry.destination,getCurrentInlineParams());
+    destView.style.display='';
+    destEditInput.style.display='none';
+  } else {
+    actionDestRow.style.display='none';
+    destView.innerHTML='';
+  }
   buildInlineParams(entry);
   refreshPreviewCmd();
   actionPanel.classList.add('visible');
@@ -1387,6 +1463,7 @@ function hideActionPanel(){
   editBtn.style.display='none';
   interactiveBtn.style.display='none';
   bgBtn.style.display='none';
+  actionDestRow.style.display='none';
   selected=null;
 }
 
@@ -1394,6 +1471,7 @@ function enterEditMode(){
   if(!selected) return;
   editMode=true;
   editOriginalTemplate=selected.entry.template;
+  editOriginalDestination=selected.entry.destination||'';
   editTemplateArea.value=selected.entry.template;
   editError.classList.remove('visible'); editError.textContent='';
   editTemplateRow.style.display='block';
@@ -1404,6 +1482,12 @@ function enterEditMode(){
   execBtn.style.display='none';
   interactiveBtn.style.display='none';
   bgBtn.style.display='none';
+  if(selected.type==='library'){
+    actionDestRow.style.display='block';
+    destView.style.display='none';
+    destEditInput.value=selected.entry.destination||'';
+    destEditInput.style.display='inline-block';
+  }
   editTemplateArea.focus();
 }
 
@@ -1420,8 +1504,22 @@ function exitEditMode(restore){
   if(restore&&selected){
     selected.entry.template=editOriginalTemplate;
     selected.entry.params=extractParams(editOriginalTemplate);
+    selected.entry.destination=editOriginalDestination;
     buildInlineParams(selected.entry);
     refreshPreviewCmd();
+  }
+  if(selected&&selected.type==='library'){
+    const dest=selected.entry.destination||'';
+    if(dest){
+      actionDestRow.style.display='block';
+      destView.innerHTML=renderTemplateHtml(dest,getCurrentInlineParams());
+      destView.style.display='';
+      destEditInput.style.display='none';
+    } else {
+      actionDestRow.style.display='none';
+    }
+  } else {
+    actionDestRow.style.display='none';
   }
   if(selected) editBtn.style.display='inline-block';
 }
@@ -1450,9 +1548,10 @@ editSaveBtn.addEventListener('click',async()=>{
   try{
     let res;
     if(selected.type==='library'){
+      const newDest=destEditInput.value.trim();
       res=await fetch(`/api/libraries/${encodeURIComponent(selected.filename)}/entries/${encodeURIComponent(selected.entry.name)}?token=${encodeURIComponent(token)}`,{
         method:'PUT', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({template:newContent.trim()})
+        body:JSON.stringify({template:newContent.trim(),destination:newDest})
       });
     } else {
       res=await fetch(`/api/scripts/${encodeURIComponent(selected.name)}?token=${encodeURIComponent(token)}`,{
@@ -1463,6 +1562,7 @@ editSaveBtn.addEventListener('click',async()=>{
     if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.detail||`Error ${res.status}`); }
     selected.entry.template=newContent;
     selected.entry.params=extractParams(newContent);
+    if(selected.type==='library') selected.entry.destination=destEditInput.value.trim();
     exitEditMode(false);
     editBtn.style.display='inline-block';
     if(selected.type==='library'){ await loadLibraries(); renderFavoritesSection(); }
@@ -1518,9 +1618,19 @@ function getCurrentInlineParams(){
 }
 
 /* ── Live Preview ── */
+function resolveTemplate(template,params){
+  let s=template;
+  for(const [k,v] of Object.entries(params)) s=s.split(`{{${k}}}`).join(v);
+  return s;
+}
+
 function refreshPreviewCmd(){
   if(!selected) return;
-  previewCmd.innerHTML=renderTemplateHtml(selected.entry.template,getCurrentInlineParams());
+  const params=getCurrentInlineParams();
+  previewCmd.innerHTML=renderTemplateHtml(selected.entry.template,params);
+  if(selected.type==='library'&&selected.entry.destination&&!editMode){
+    destView.innerHTML=renderTemplateHtml(selected.entry.destination,params);
+  }
 }
 
 function renderTemplateHtml(template,params){
@@ -1548,7 +1658,7 @@ execBtn.addEventListener('click',()=>{
     if(Object.keys(params).length>0) runScriptWithParams(name,itemEl,params);
     else runScript(name,itemEl);
   } else {
-    execLibraryEntry(selected.filename,selected.entry.name,params);
+    execLibraryEntry(selected.filename,selected.entry.name,params,selected.entry);
   }
 });
 
@@ -1564,7 +1674,7 @@ interactiveBtn.addEventListener('click',()=>{
     const{name,itemEl}=selected;
     runScriptInteractive(name,itemEl,params);
   } else {
-    execLibraryInteractive(selected.filename,selected.entry.name,params);
+    execLibraryInteractive(selected.filename,selected.entry.name,params,selected.entry);
   }
 });
 
@@ -1583,6 +1693,8 @@ function runScript(name,itemEl){
 function runScriptWithParams(name,itemEl,params){
   setActive(itemEl,'script'); setRunning(true);
   clearOutput(); appendPromptLine(null,name);
+  const pe=Object.entries(params);
+  if(pe.length) appendLine('$ '+pe.map(([k,v])=>k+'='+v).join(' ')+'\n','meta');
   const proto=location.protocol==='https:'?'wss:':'ws:';
   activeWs=new WebSocket(`${proto}//${location.host}/ws/run-with-params/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}${sidParam()}`);
   activeWs.addEventListener('open',()=>activeWs.send(JSON.stringify({params})));
@@ -1590,18 +1702,23 @@ function runScriptWithParams(name,itemEl,params){
 }
 
 function execLibraryDirect(filename,entry){
-  if(entry.params.length===0){ execLibraryEntry(filename,entry.name,{}); return; }
+  if(entry.params.length===0){ execLibraryEntry(filename,entry.name,{},entry); return; }
   const globals=getGlobalVars(); const params={}; let allFilled=true;
   entry.params.forEach(p=>{ params[p]=globals[p]||''; if(!params[p]) allFilled=false; });
-  if(allFilled) execLibraryEntry(filename,entry.name,params);
+  if(allFilled) execLibraryEntry(filename,entry.name,params,entry);
   else selectLibraryEntry(filename,libraries[filename]?.category||'',entry);
 }
 
-function execLibraryEntry(filename,entryName,params){
+function execLibraryEntry(filename,entryName,params,entryHint){
   const cat=libraries[filename]?.category||'';
+  const entry=entryHint||libraries[filename]?.entries.find(e=>e.name===entryName)||{};
+  const resolvedDest=resolveTemplate(entry.destination||'',params);
+  const resolvedCmd=resolveTemplate(entry.template||'',params);
   setRunning(true);
-  terminalTitle.innerHTML=`<span class="title-cat">${esc(cat)}</span> / <span>${esc(entryName)}</span>`;
-  clearOutput(); appendPromptLine(cat,entryName);
+  const destPart=resolvedDest?` <span class="title-dest">→ <span class="title-dest-val">${esc(resolvedDest)}</span></span>`:'';
+  terminalTitle.innerHTML=`<span class="title-cat">${esc(cat)}</span> / <span>${esc(entryName)}</span>${destPart}`;
+  clearOutput(); appendPromptLine(cat,entryName,'main',resolvedDest);
+  if(resolvedCmd) appendLine('$ '+resolvedCmd+'\n','meta');
   const proto=location.protocol==='https:'?'wss:':'ws:';
   activeWs=new WebSocket(`${proto}//${location.host}/ws/exec?token=${encodeURIComponent(token)}${sidParam()}`);
   activeWs.addEventListener('open',()=>activeWs.send(JSON.stringify({library:filename,name:entryName,params})));
@@ -1612,17 +1729,23 @@ function runScriptInteractive(name,itemEl,params){
   setActive(itemEl,'script');
   const tabId=openInteractiveTab(name);
   appendPromptLine(null,name,tabId);
+  const pe=Object.entries(params);
+  if(pe.length) appendLine('$ '+pe.map(([k,v])=>k+'='+v).join(' ')+'\n','meta',tabId);
   const proto=location.protocol==='https:'?'wss:':'ws:';
   const ws=new WebSocket(`${proto}//${location.host}/ws/run-interactive/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}${sidParam()}`);
   ws.addEventListener('open',()=>ws.send(JSON.stringify({params})));
   wireWs(ws,tabId);
 }
 
-function execLibraryInteractive(filename,entryName,params){
+function execLibraryInteractive(filename,entryName,params,entryHint){
   const cat=libraries[filename]?.category||'';
-  const title=(cat?cat+' / ':'')+entryName;
+  const entry=entryHint||libraries[filename]?.entries.find(e=>e.name===entryName)||{};
+  const resolvedDest=resolveTemplate(entry.destination||'',params);
+  const resolvedCmd=resolveTemplate(entry.template||'',params);
+  const title=(cat?cat+' / ':'')+entryName+(resolvedDest?' → '+resolvedDest:'');
   const tabId=openInteractiveTab(title);
-  appendPromptLine(cat,entryName,tabId);
+  appendPromptLine(cat,entryName,tabId,resolvedDest);
+  if(resolvedCmd) appendLine('$ '+resolvedCmd+'\n','meta',tabId);
   const proto=location.protocol==='https:'?'wss:':'ws:';
   const ws=new WebSocket(`${proto}//${location.host}/ws/exec-interactive?token=${encodeURIComponent(token)}${sidParam()}`);
   ws.addEventListener('open',()=>ws.send(JSON.stringify({library:filename,name:entryName,params})));
@@ -1732,11 +1855,12 @@ function clearOutput(tabId='main'){
   if(tab.ansiState) tab.ansiState=newAnsiState();
   if(tabId==='main'){ exitBadge.className=''; exitBadge.textContent=''; emptyState.style.display='none'; }
 }
-function appendPromptLine(cat,name,tabId='main'){
+function appendPromptLine(cat,name,tabId='main',destination=''){
   const tab=tabs.get(tabId); if(!tab) return;
   if(tabId==='main') emptyState.style.display='none';
   const div=document.createElement('div'); div.className='prompt-line';
-  div.innerHTML=`<span class="prompt-arrow">❯</span>${cat?`<span class="prompt-cat">${esc(cat)}</span> / `:''}<span>${esc(name)}</span>`;
+  const destPart=destination?` <span class="prompt-dest">→ ${esc(destination)}</span>`:'';
+  div.innerHTML=`<span class="prompt-arrow">❯</span>${cat?`<span class="prompt-cat">${esc(cat)}</span> / `:''}<span>${esc(name)}</span>${destPart}`;
   tab.outputEl.appendChild(div);
 }
 function appendLine(text,type,tabId='main'){
@@ -1804,6 +1928,8 @@ function setRunning(state){
   const titleEl =document.getElementById('create-title');
   const libRow  =document.getElementById('create-lib-row');
   const nameInp =document.getElementById('create-name-input');
+  const destRow =document.getElementById('create-dest-row');
+  const destInp =document.getElementById('create-dest-input');
   const contentA=document.getElementById('create-content-area');
   const labelEl =document.getElementById('create-content-label');
   const errEl   =document.getElementById('create-modal-error');
@@ -1811,16 +1937,16 @@ function setRunning(state){
 
   window.openCreateModal=function(mode,libFilename,libCategory){
     createMode=mode; createLibFilename=libFilename||'';
-    nameInp.value=''; contentA.value=''; errEl.classList.remove('visible'); errEl.textContent='';
+    nameInp.value=''; contentA.value=''; destInp.value=''; errEl.classList.remove('visible'); errEl.textContent='';
     if(mode==='script'){
-      titleEl.textContent='NEW SCRIPT'; libRow.style.display='none';
+      titleEl.textContent='NEW SCRIPT'; libRow.style.display='none'; destRow.style.display='none';
       labelEl.textContent='CONTENT';
       contentA.placeholder='#!/bin/bash\necho Hello';
       contentA.value='#!/bin/bash\n';
       nameInp.placeholder='my_script';
     } else {
       titleEl.textContent='NEW ENTRY IN '+(libCategory||'LIBRARY');
-      libRow.style.display='none';
+      libRow.style.display='none'; destRow.style.display='block';
       labelEl.textContent='COMMAND TEMPLATE';
       contentA.placeholder='curl -s https://example.com/{{ENV}}';
       contentA.value='';
@@ -1853,7 +1979,7 @@ function setRunning(state){
       } else {
         const res=await fetch(`/api/libraries/${encodeURIComponent(createLibFilename)}/entries?token=${encodeURIComponent(token)}`,{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({name,template:content})
+          body:JSON.stringify({name,destination:destInp.value.trim(),template:content})
         });
         if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.detail||`Error ${res.status}`); }
         close();
@@ -2132,7 +2258,7 @@ async function stopJob(id){
 
 function startBgPoll(){
   if(bgPollTimer) clearInterval(bgPollTimer);
-  bgPollTimer=setInterval(refreshJobs,3000);
+  bgPollTimer=setInterval(refreshJobs,30000);
 }
 
 bgBtn.addEventListener('click',async()=>{

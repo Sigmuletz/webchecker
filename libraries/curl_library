@@ -1,4 +1,4 @@
-get_json|curl -X GET "{{URL}}" \
+get_json:pod3 -p "{{TENANT}}-ram-"|curl -X GET "{{URL}}" \
   -H Accept: application/json" -d "{{ENV}}:{{KVNR}}:{{TENANT}}" \
   -d "aasdfa"
 

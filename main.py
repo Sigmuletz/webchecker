@@ -70,8 +70,15 @@ def parse_library_file(path: Path) -> list:
     def flush():
         if current_name is not None:
             template = "\n".join(current_lines).rstrip()
-            params = sorted(set(PARAM_RE.findall(template)))
-            entries.append({"name": current_name, "template": template, "params": params})
+            if ":" in current_name:
+                colon_idx = current_name.index(":")
+                display_name = current_name[:colon_idx].strip()
+                destination = current_name[colon_idx + 1:].strip()
+            else:
+                display_name = current_name
+                destination = ""
+            params = sorted(set(PARAM_RE.findall(template) + PARAM_RE.findall(destination)))
+            entries.append({"name": display_name, "destination": destination, "template": template, "params": params})
 
     for line in path.read_text().splitlines():
         if not line.strip():
@@ -230,7 +237,7 @@ async def run_script(websocket: WebSocket, script_name: str, token: str = Query(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        await stream_proc(websocket, proc, session_id, {"name": script_name, "cat": None})
+        await stream_proc(websocket, proc, session_id, {"name": script_name, "cat": None, "cmd": str(script_path)})
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
             proc.kill()
@@ -263,6 +270,9 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
     child_pid = None
     active = True
     tmp_path = None
+    _session_log_lines: list = []
+    _exit_code = [-1]
+    _run_cmd = ""
 
     try:
         data = json.loads(await websocket.receive_text())
@@ -274,6 +284,8 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
         remaining = PARAM_RE.findall(content)
         if remaining:
             raise ValueError(f"Unresolved params: {remaining}")
+
+        _run_cmd = content
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
             f.write(content)
@@ -314,18 +326,23 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
                 if chunk is None:
                     break
                 if chunk:
-                    await websocket.send_text(json.dumps({"type": "stdout", "data": chunk.decode("utf-8", errors="replace")}))
+                    decoded = chunk.decode("utf-8", errors="replace")
+                    _session_log_lines.append({"t": "o", "d": decoded})
+                    await websocket.send_text(json.dumps({"type": "stdout", "data": decoded}))
                 if child_pid is not None:
                     pid, wstatus = os.waitpid(child_pid, os.WNOHANG)
                     if pid != 0:
                         code = (wstatus >> 8) & 0xFF
+                        _exit_code[0] = code
                         child_pid = None
                         # drain remaining PTY output before sending exit
                         while True:
                             drain = await loop.run_in_executor(None, _pty_read)
                             if not drain:
                                 break
-                            await websocket.send_text(json.dumps({"type": "stdout", "data": drain.decode("utf-8", errors="replace")}))
+                            drained = drain.decode("utf-8", errors="replace")
+                            _session_log_lines.append({"t": "o", "d": drained})
+                            await websocket.send_text(json.dumps({"type": "stdout", "data": drained}))
                         await websocket.send_text(json.dumps({"type": "exit", "data": str(code)}))
                         break
             active = False
@@ -375,6 +392,12 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
                 os.unlink(tmp_path)
             except Exception:
                 pass
+        if session_id and _run_cmd:
+            _append_session_log(session_id, {
+                "name": script_name, "cat": None, "cmd": _run_cmd,
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "lines": _session_log_lines, "code": _exit_code[0],
+            })
         try:
             await websocket.close()
         except Exception:
@@ -392,6 +415,12 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
     master_fd = None
     child_pid = None
     active = True
+    _session_log_lines: list = []
+    _exit_code = [-1]
+    _run_cmd = ""
+    _entry_name = ""
+    _category = ""
+    _dest = ""
 
     try:
         data = json.loads(await websocket.receive_text())
@@ -411,11 +440,24 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
             raise ValueError(f"Entry not found: {entry_name}")
 
         command = entry["template"]
+        destination = entry.get("destination", "")
         for key, value in params.items():
             command = command.replace(f"{{{{{key}}}}}", value)
-        remaining = PARAM_RE.findall(command)
+            destination = destination.replace(f"{{{{{key}}}}}", value)
+        remaining = PARAM_RE.findall(command) + PARAM_RE.findall(destination)
         if remaining:
             raise ValueError(f"Unresolved params: {remaining}")
+
+        if destination:
+            esc_cmd = command.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+            exec_cmd = f'{destination} <<< "{esc_cmd}"'
+        else:
+            exec_cmd = command
+
+        _run_cmd = exec_cmd
+        _entry_name = entry_name
+        _category = lib_path.stem.replace("_library", "").replace("_", " ").upper()
+        _dest = destination
 
         master_fd, slave_fd = pty.openpty()
 
@@ -429,7 +471,7 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
                 os.dup2(slave_fd, fd)
             if slave_fd > 2:
                 os.close(slave_fd)
-            os.execv("/bin/bash", ["/bin/bash", "-c", command])
+            os.execv("/bin/bash", ["/bin/bash", "-c", exec_cmd])
             os._exit(127)
 
         os.close(slave_fd)
@@ -452,24 +494,23 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
                 if chunk is None:
                     break
                 if chunk:
-                    await websocket.send_text(json.dumps({
-                        "type": "stdout",
-                        "data": chunk.decode("utf-8", errors="replace"),
-                    }))
+                    decoded = chunk.decode("utf-8", errors="replace")
+                    _session_log_lines.append({"t": "o", "d": decoded})
+                    await websocket.send_text(json.dumps({"type": "stdout", "data": decoded}))
                 if child_pid is not None:
                     pid, wstatus = os.waitpid(child_pid, os.WNOHANG)
                     if pid != 0:
                         code = (wstatus >> 8) & 0xFF
+                        _exit_code[0] = code
                         child_pid = None
                         # drain remaining PTY output before sending exit
                         while True:
                             drain = await loop.run_in_executor(None, _pty_read)
                             if not drain:
                                 break
-                            await websocket.send_text(json.dumps({
-                                "type": "stdout",
-                                "data": drain.decode("utf-8", errors="replace"),
-                            }))
+                            drained = drain.decode("utf-8", errors="replace")
+                            _session_log_lines.append({"t": "o", "d": drained})
+                            await websocket.send_text(json.dumps({"type": "stdout", "data": drained}))
                         await websocket.send_text(json.dumps({"type": "exit", "data": str(code)}))
                         break
             active = False
@@ -514,6 +555,12 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
                 os.close(master_fd)
             except OSError:
                 pass
+        if session_id and _run_cmd:
+            _append_session_log(session_id, {
+                "name": _entry_name, "cat": _category, "cmd": _run_cmd, "dest": _dest,
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "lines": _session_log_lines, "code": _exit_code[0],
+            })
         try:
             await websocket.close()
         except Exception:
@@ -546,20 +593,32 @@ async def exec_command(websocket: WebSocket, token: str = Query(...), session_id
             raise ValueError(f"Entry not found: {entry_name}")
 
         command = entry["template"]
+        destination = entry.get("destination", "")
         for key, value in params.items():
             command = command.replace(f"{{{{{key}}}}}", value)
+            destination = destination.replace(f"{{{{{key}}}}}", value)
 
-        remaining = PARAM_RE.findall(command)
+        remaining = PARAM_RE.findall(command) + PARAM_RE.findall(destination)
         if remaining:
             raise ValueError(f"Unresolved params: {remaining}")
 
         category = lib_path.stem.replace("_library", "").replace("_", " ").upper()
-        proc = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        await stream_proc(websocket, proc, session_id, {"name": entry_name, "cat": category})
+        if destination:
+            esc_cmd = command.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+            exec_str = f'{destination} <<< "{esc_cmd}"'
+            proc = await asyncio.create_subprocess_exec(
+                "bash", "-c", exec_str,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        else:
+            exec_str = command
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        await stream_proc(websocket, proc, session_id, {"name": entry_name, "cat": category, "cmd": exec_str, "dest": destination})
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
@@ -612,7 +671,7 @@ async def run_script_with_params(websocket: WebSocket, script_name: str, token: 
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        await stream_proc(websocket, proc, session_id, {"name": script_name, "cat": None})
+        await stream_proc(websocket, proc, session_id, {"name": script_name, "cat": None, "cmd": content})
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
@@ -670,6 +729,7 @@ async def update_library_entry(lib_name: str, entry_name: str, request: Request,
     check_token(token)
     body = await request.json()
     new_template = body.get("template", "").strip()
+    new_destination = body.get("destination", "").strip()
     if not new_template:
         raise HTTPException(status_code=400, detail="Template required")
 
@@ -688,10 +748,15 @@ async def update_library_entry(lib_name: str, entry_name: str, request: Request,
         if not block.strip():
             continue
         first_line = block.split('\n')[0]
-        block_name = first_line.split('|', 1)[0].strip() if '|' in first_line and first_line[0] not in ' \t' else None
-        if block_name == entry_name:
+        if '|' not in first_line or first_line[0] in ' \t':
+            new_blocks.append(block)
+            continue
+        full_key = first_line.split('|', 1)[0].strip()
+        block_display_name = full_key.split(':', 1)[0].strip()
+        if block_display_name == entry_name:
+            new_key = entry_name + ":" + new_destination if new_destination else entry_name
             lines = new_template.split('\n')
-            new_block = entry_name + '|' + lines[0]
+            new_block = new_key + '|' + lines[0]
             if len(lines) > 1:
                 new_block += '\n' + '\n'.join(lines[1:])
             new_blocks.append(new_block)
@@ -711,22 +776,24 @@ async def create_library_entry(lib_name: str, request: Request, token: str = Que
     check_token(token)
     body = await request.json()
     entry_name = body.get("name", "").strip()
+    destination = body.get("destination", "").strip()
     template = body.get("template", "").strip()
     if not entry_name or not template:
         raise HTTPException(status_code=400, detail="Name and template required")
     lib_path = (LIBRARIES_DIR / lib_name).resolve()
     if not str(lib_path).startswith(str(LIBRARIES_DIR) + os.sep):
         raise HTTPException(status_code=400, detail="Invalid library")
+    full_key = entry_name + ":" + destination if destination else entry_name
     if lib_path.exists():
         entries = parse_library_file(lib_path)
         if any(e["name"] == entry_name for e in entries):
             raise HTTPException(status_code=409, detail="Entry already exists")
         existing = lib_path.read_text()
         sep = "" if existing.endswith("\n\n") else ("\n" if existing.endswith("\n") else "\n\n")
-        lib_path.write_text(existing + sep + entry_name + "|" + template + "\n")
+        lib_path.write_text(existing + sep + full_key + "|" + template + "\n")
     else:
         LIBRARIES_DIR.mkdir(parents=True, exist_ok=True)
-        lib_path.write_text(entry_name + "|" + template + "\n")
+        lib_path.write_text(full_key + "|" + template + "\n")
     return JSONResponse({"ok": True})
 
 
@@ -815,16 +882,27 @@ async def start_job(request: Request, token: str = Query(...)):
         if not entry:
             raise HTTPException(status_code=404, detail="Entry not found")
         command = entry["template"]
+        destination = entry.get("destination", "")
         for k, v in params.items():
             command = command.replace(f"{{{{{k}}}}}", v)
-        remaining = PARAM_RE.findall(command)
+            destination = destination.replace(f"{{{{{k}}}}}", v)
+        remaining = PARAM_RE.findall(command) + PARAM_RE.findall(destination)
         if remaining:
             raise HTTPException(status_code=400, detail=f"Unresolved params: {remaining}")
-        proc = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
+        if destination:
+            esc_cmd = command.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+            exec_str = f'{destination} <<< "{esc_cmd}"'
+            proc = await asyncio.create_subprocess_exec(
+                "bash", "-c", exec_str,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+        else:
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
         display_name = entry_name
         cat = lib_path.stem.replace("_library", "").replace("_", " ").upper()
 
