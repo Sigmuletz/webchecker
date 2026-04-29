@@ -1,11 +1,14 @@
 import asyncio
+import fcntl
 import json
 import os
 import pty
 import re
 import select as _select
 import signal
+import struct
 import tempfile
+import termios
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -355,6 +358,10 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
                     t = msg.get("type")
                     if t == "input":
                         os.write(master_fd, msg.get("data", "").encode("utf-8", errors="replace"))
+                    elif t == "resize":
+                        cols = max(1, int(msg.get("cols", 80)))
+                        rows = max(1, int(msg.get("rows", 24)))
+                        fcntl.ioctl(master_fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
                     elif t == "close":
                         break
                 except WebSocketDisconnect:
@@ -523,6 +530,10 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
                     t = msg.get("type")
                     if t == "input":
                         os.write(master_fd, msg.get("data", "").encode("utf-8", errors="replace"))
+                    elif t == "resize":
+                        cols = max(1, int(msg.get("cols", 80)))
+                        rows = max(1, int(msg.get("rows", 24)))
+                        fcntl.ioctl(master_fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
                     elif t == "close":
                         break
                 except WebSocketDisconnect:

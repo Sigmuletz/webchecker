@@ -696,7 +696,16 @@
     #sidebar-scroll{overflow-x:auto;overflow-y:hidden;display:flex}
     .sidebar-section{border-bottom:none;border-right:1px solid var(--border);min-width:160px}
   }
+  /* ── XTERM TABS ── */
+  .tab-content.xterm-tab{position:absolute;inset:0;overflow:hidden;min-height:unset;display:none;flex-direction:column}
+  .tab-content.xterm-tab.active{display:flex}
+  .xterm-container{flex:1;min-height:0;overflow:hidden}
+  .xterm-container .xterm{height:100%}
+  .xterm-container .xterm-viewport{overflow-y:auto}
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.9.0/lib/addon-fit.min.js"></script>
 </head>
 <body>
 
@@ -764,7 +773,7 @@
         <div class="logo-icon">
           <svg viewBox="0 0 14 14" fill="none"><polyline points="2,4 6,7 2,10" stroke="#3dff8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="10" x2="12" y2="10" stroke="#3dff8f" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
-        <div class="logo-text">SHELLGATE v.04</div>
+        <div class="logo-text">SHELLGATE v.05</div>
       </div>
       <button id="settings-btn">⚙ TOKEN</button>
     </div>
@@ -1773,6 +1782,28 @@ interactiveCloseBtn.addEventListener('click',()=>{
 function wireWs(ws,tabId='main'){
   const tab=tabs.get(tabId);
   if(tab) tab.ws=ws;
+
+  if(tab?.xterm){
+    const xterm=tab.xterm;
+    xterm.onData(data=>{
+      if(ws.readyState===WebSocket.OPEN)
+        ws.send(JSON.stringify({type:'input',data}));
+    });
+    xterm.onResize(({cols,rows})=>{
+      if(ws.readyState===WebSocket.OPEN)
+        ws.send(JSON.stringify({type:'resize',cols,rows}));
+    });
+    ws.addEventListener('message',e=>{
+      let msg; try{msg=JSON.parse(e.data);}catch{return;}
+      if(msg.type==='stdout'||msg.type==='stderr') xterm.write(msg.data);
+      else if(msg.type==='exit') handleExit(parseInt(msg.data,10),tabId);
+      else if(msg.type==='error'){xterm.write('\x1b[31m[error] '+msg.data+'\x1b[0m\r\n');handleExit(-1,tabId);}
+    });
+    ws.addEventListener('error',()=>{xterm.write('\x1b[31m[websocket error]\x1b[0m\r\n');handleExit(-1,tabId);});
+    ws.addEventListener('close',()=>{ const t=tabs.get(tabId); if(t&&t.running) handleExit(-1,tabId); });
+    return;
+  }
+
   if(tabId!=='main'&&tabId===activeTabId){
     interactiveBar.classList.add('visible');
     setTimeout(()=>interactiveInput.focus(),80);
@@ -1792,6 +1823,12 @@ function handleExit(code,tabId='main'){
   const tab=tabs.get(tabId);
   if(tabId!=='main'&&(!tab||!tab.running)) return;
   if(tab){ tab.running=false; tab.ws=null; }
+  if(tab?.xterm){
+    tab.xterm.write('\r\n\x1b[2m[process exited with code '+code+']\x1b[0m\r\n');
+    if(tabId===activeTabId) killBtn.classList.remove('visible');
+    renderTabBar();
+    return;
+  }
   appendLine('\n[process exited with code '+code+']','meta',tabId);
   if(tabId==='main'){
     setRunning(false);
@@ -1857,6 +1894,12 @@ function clearOutput(tabId='main'){
 }
 function appendPromptLine(cat,name,tabId='main',destination=''){
   const tab=tabs.get(tabId); if(!tab) return;
+  if(tab.xterm){
+    const catPart=cat?'\x1b[36m'+cat+'\x1b[0m / ':'';
+    const destPart=destination?' \x1b[2m→ '+destination+'\x1b[0m':'';
+    tab.xterm.write('\x1b[1;32m❯\x1b[0m '+catPart+name+destPart+'\r\n');
+    return;
+  }
   if(tabId==='main') emptyState.style.display='none';
   const div=document.createElement('div'); div.className='prompt-line';
   const destPart=destination?` <span class="prompt-dest">→ ${esc(destination)}</span>`:'';
@@ -1865,6 +1908,11 @@ function appendPromptLine(cat,name,tabId='main',destination=''){
 }
 function appendLine(text,type,tabId='main'){
   const tab=tabs.get(tabId); if(!tab) return;
+  if(tab.xterm){
+    if(type==='meta') tab.xterm.write('\x1b[2m'+text.replace(/\n/g,'\r\n')+'\x1b[0m');
+    else tab.xterm.write(text);
+    return;
+  }
   if(tabId==='main') emptyState.style.display='none';
   const span=document.createElement('span'); span.className='line-'+type;
   if((type==='stdout'||type==='stderr')&&tab.ansiState) span.innerHTML=ansiToHtml(text,tab.ansiState);
@@ -1895,7 +1943,8 @@ clearBtn.addEventListener('click',()=>{
     }
   } else {
     const tab=tabs.get(activeTabId);
-    if(tab) tab.outputEl.innerHTML='';
+    if(tab?.xterm) tab.xterm.clear();
+    else if(tab) tab.outputEl.innerHTML='';
   }
 });
 
@@ -2314,11 +2363,9 @@ function switchTab(id){
     interactiveBar.classList.remove('visible');
   } else {
     killBtn.classList.toggle('visible',!!tab.running);
-    if(tab.running){
-      interactiveBar.classList.add('visible');
-      setTimeout(()=>interactiveInput.focus(),80);
-    } else {
-      interactiveBar.classList.remove('visible');
+    interactiveBar.classList.remove('visible');
+    if(tab.xterm){
+      setTimeout(()=>{ tab.fitAddon?.fit(); tab.xterm?.focus(); },50);
     }
   }
 }
@@ -2327,11 +2374,40 @@ function openInteractiveTab(title){
   tabCounter++;
   const id='itab-'+tabCounter;
   const contentEl=document.createElement('div');
-  contentEl.className='tab-content';
-  const outputEl=document.createElement('pre');
-  contentEl.appendChild(outputEl);
+  contentEl.className='tab-content xterm-tab';
+  const xtermDiv=document.createElement('div');
+  xtermDiv.className='xterm-container';
+  contentEl.appendChild(xtermDiv);
   outputWrap.appendChild(contentEl);
-  tabs.set(id,{id,title,type:'interactive',ws:null,running:true,contentEl,outputEl,ansiState:newAnsiState()});
+
+  const xterm=new Terminal({
+    fontFamily:"'JetBrains Mono','Cascadia Code','Fira Code',monospace",
+    fontSize:13,
+    lineHeight:1.4,
+    cursorBlink:true,
+    allowProposedApi:true,
+    theme:{
+      background:'#0a0e13',foreground:'#c8daea',cursor:'#3dff8f',
+      selectionBackground:'rgba(36,51,72,0.7)',
+      black:'#0a0e13',red:'#ff4d6a',green:'#3dff8f',yellow:'#ffd166',
+      blue:'#38bdf8',magenta:'#ff79c6',cyan:'#8be9fd',white:'#c8daea',
+      brightBlack:'#3a5068',brightRed:'#ff6e6e',brightGreen:'#69ff94',
+      brightYellow:'#ffffa5',brightBlue:'#a4ffff',brightMagenta:'#ff92df',
+      brightCyan:'#a4ffff',brightWhite:'#ffffff',
+    },
+  });
+  const fitAddon=new FitAddon.FitAddon();
+  xterm.loadAddon(fitAddon);
+  xterm.open(xtermDiv);
+  fitAddon.fit();
+
+  const tab={id,title,type:'interactive',ws:null,running:true,contentEl,outputEl:xtermDiv,xterm,fitAddon,ansiState:null};
+  tabs.set(id,tab);
+
+  const ro=new ResizeObserver(()=>fitAddon.fit());
+  ro.observe(xtermDiv);
+  tab.resizeObserver=ro;
+
   switchTab(id);
   return id;
 }
@@ -2340,6 +2416,8 @@ function closeTab(id){
   if(id==='main') return;
   const tab=tabs.get(id); if(!tab) return;
   if(tab.ws){ tab.ws.send(JSON.stringify({type:'close'})); setTimeout(()=>{ if(tab.ws) tab.ws.close(); },300); }
+  tab.resizeObserver?.disconnect();
+  tab.xterm?.dispose();
   tab.contentEl.remove();
   tabs.delete(id);
   if(activeTabId===id) switchTab('main');

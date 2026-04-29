@@ -1,5 +1,6 @@
 CLAUDE.md
 .claude
+.claudeignore
 __pycache__/
 .env
 logs/

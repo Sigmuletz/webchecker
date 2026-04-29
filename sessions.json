@@ -30,6 +30,7 @@
   "BARMER_BASdASDAS": {
     "KVNR": "BASdASDAS",
     "TENANT": "BARMER",
-    "ENV": "PROD"
+    "ENV": "PROD",
+    "URL": "www.google.com"
   }
 }
