@@ -370,7 +370,18 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
                     break
             active = False
 
-        await asyncio.gather(reader(), writer(), return_exceptions=True)
+        async def keepalive():
+            nonlocal active
+            while active:
+                await asyncio.sleep(20)
+                if not active:
+                    break
+                try:
+                    await websocket.send_text(json.dumps({"type": "ping"}))
+                except Exception:
+                    break
+
+        await asyncio.gather(reader(), writer(), keepalive(), return_exceptions=True)
 
     except WebSocketDisconnect:
         pass
@@ -542,7 +553,18 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
                     break
             active = False
 
-        await asyncio.gather(reader(), writer(), return_exceptions=True)
+        async def keepalive():
+            nonlocal active
+            while active:
+                await asyncio.sleep(20)
+                if not active:
+                    break
+                try:
+                    await websocket.send_text(json.dumps({"type": "ping"}))
+                except Exception:
+                    break
+
+        await asyncio.gather(reader(), writer(), keepalive(), return_exceptions=True)
 
     except WebSocketDisconnect:
         pass
