@@ -26,6 +26,8 @@ LOGS_DIR      = Path(os.getenv("LOGS_DIR",      "./logs")).resolve()
 AUTH_TOKEN    = os.getenv("AUTH_TOKEN", "changeme")
 HOST          = os.getenv("HOST", "127.0.0.1")
 PORT          = int(os.getenv("PORT", "8000"))
+SSL_CERT      = os.getenv("SSL_CERT", "")
+SSL_KEY       = os.getenv("SSL_KEY", "")
 
 app = FastAPI()
 
@@ -975,4 +977,7 @@ def index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host=HOST, port=PORT, reload=False)
+    ssl_kwargs = {}
+    if SSL_CERT and SSL_KEY:
+        ssl_kwargs = {"ssl_certfile": SSL_CERT, "ssl_keyfile": SSL_KEY}
+    uvicorn.run("main:app", host=HOST, port=PORT, reload=False, **ssl_kwargs)
