@@ -357,7 +357,10 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
                     msg = json.loads(await websocket.receive_text())
                     t = msg.get("type")
                     if t == "input":
-                        os.write(master_fd, msg.get("data", "").encode("utf-8", errors="replace"))
+                        try:
+                            os.write(master_fd, msg.get("data", "").encode("utf-8", errors="replace"))
+                        except OSError as e:
+                            await websocket.send_text(json.dumps({"type": "error", "data": f"write error: {e}"}))
                     elif t == "resize":
                         cols = max(1, int(msg.get("cols", 80)))
                         rows = max(1, int(msg.get("rows", 24)))
@@ -540,7 +543,10 @@ async def exec_interactive(websocket: WebSocket, token: str = Query(...), sessio
                     msg = json.loads(await websocket.receive_text())
                     t = msg.get("type")
                     if t == "input":
-                        os.write(master_fd, msg.get("data", "").encode("utf-8", errors="replace"))
+                        try:
+                            os.write(master_fd, msg.get("data", "").encode("utf-8", errors="replace"))
+                        except OSError as e:
+                            await websocket.send_text(json.dumps({"type": "error", "data": f"write error: {e}"}))
                     elif t == "resize":
                         cols = max(1, int(msg.get("cols", 80)))
                         rows = max(1, int(msg.get("rows", 24)))

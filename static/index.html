@@ -2400,6 +2400,7 @@ function openInteractiveTab(title){
   xterm.loadAddon(fitAddon);
   xterm.open(xtermDiv);
   fitAddon.fit();
+  xtermDiv.addEventListener('click',()=>xterm.focus());
 
   const tab={id,title,type:'interactive',ws:null,running:true,contentEl,outputEl:xtermDiv,xterm,fitAddon,ansiState:null};
   tabs.set(id,tab);
