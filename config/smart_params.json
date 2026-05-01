@@ -1,0 +1,14 @@
+{
+  "ENV": {
+    "type": "static",
+    "options": ["prod", "staging", "dev", "test"]
+  },
+  "TENANT": {
+    "type": "script",
+    "script": "list_tenants.sh"
+  },
+  "URL": {
+    "type": "static",
+    "options": ["www.google.com", "www.duck.com", "www.yahoo.com", "www.muik.com"]
+  }  
+}

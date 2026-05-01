@@ -1,0 +1,22 @@
+[
+  {
+    "id": "default",
+    "name": "DEFAULT",
+    "scripts_dir": "./scripts",
+    "libraries_dir": "./libraries",
+    "status_dir": "./status",
+    "logs_dir": "./logs",
+    "sessions_file": "./config/sessions.json",
+    "smart_params_file": "./config/smart_params.json"
+  },
+  {
+    "id": "sigma",
+    "name": "SIGMA",
+    "scripts_dir": "./sigma/scripts",
+    "libraries_dir": "./sigma/libraries",
+    "status_dir": "./sigma/status",
+    "logs_dir": "./sigma/logs",
+    "sessions_file": "./sigma/config/sessions.json",
+    "smart_params_file": "./sigma/config/smart_params.json"
+  }
+]

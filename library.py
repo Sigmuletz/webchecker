@@ -4,14 +4,15 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
-from config import LIBRARIES_DIR, SCRIPTS_DIR
+import config
 
 PARAM_RE = re.compile(r'\{\{([A-Z_0-9]+)\}\}')
 
 
 def resolve_script(script_name: str) -> Path:
-    path = (SCRIPTS_DIR / script_name).resolve()
-    if SCRIPTS_DIR not in path.parents:
+    scripts_dir = config.get_scripts_dir()
+    path = (scripts_dir / script_name).resolve()
+    if scripts_dir not in path.parents:
         raise HTTPException(status_code=400, detail="Invalid path")
     if path.suffix != ".sh":
         raise HTTPException(status_code=400, detail="Not a .sh file")
@@ -21,8 +22,9 @@ def resolve_script(script_name: str) -> Path:
 
 
 def resolve_library(lib_name: str) -> Path:
-    path = (LIBRARIES_DIR / lib_name).resolve()
-    if LIBRARIES_DIR not in path.parents:
+    libraries_dir = config.get_libraries_dir()
+    path = (libraries_dir / lib_name).resolve()
+    if libraries_dir not in path.parents:
         raise HTTPException(status_code=400, detail="Invalid library")
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Library not found")
@@ -30,9 +32,9 @@ def resolve_library(lib_name: str) -> Path:
 
 
 def _validate_lib_path(lib_name: str) -> Path:
-    """Validate library path without requiring the file to exist (used by create)."""
-    path = (LIBRARIES_DIR / lib_name).resolve()
-    if LIBRARIES_DIR not in path.parents:
+    libraries_dir = config.get_libraries_dir()
+    path = (libraries_dir / lib_name).resolve()
+    if libraries_dir not in path.parents:
         raise HTTPException(status_code=400, detail="Invalid library")
     return path
 

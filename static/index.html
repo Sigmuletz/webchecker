@@ -702,6 +702,168 @@
   .xterm-container{flex:1;min-height:0;overflow:hidden}
   .xterm-container .xterm{height:100%}
   .xterm-container .xterm-viewport{overflow-y:auto}
+
+  /* ── SCRIPT ARGS ── */
+  #script-args-row{
+    padding:6px 16px 0;border-top:1px solid var(--border);display:none;
+  }
+  .args-input-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .args-key{
+    font-size:9px;letter-spacing:.14em;color:var(--text-dim);text-transform:uppercase;
+    flex-shrink:0;width:36px;
+  }
+  #script-args-input{
+    flex:1;background:var(--bg);border:1px solid var(--border);border-radius:3px;
+    padding:4px 8px;color:var(--text-hi);font-family:var(--mono);font-size:11px;
+    outline:none;transition:border-color .15s;
+  }
+  #script-args-input:focus{border-color:var(--border-hi)}
+  #script-args-input::placeholder{color:var(--text-dim)}
+  #exec-preview-wrap{
+    border-top:1px solid var(--border);padding:6px 0 8px;
+  }
+  .exec-preview-label{
+    font-size:9px;letter-spacing:.14em;color:var(--text-dim);text-transform:uppercase;
+    padding:0 0 4px;
+  }
+  #exec-cmd-code{
+    font-family:var(--mono);font-size:11.5px;line-height:1.65;
+    white-space:pre-wrap;word-break:break-all;color:var(--text);display:block;
+  }
+  .cmd-bash{color:var(--text-dim)}
+  .cmd-script{color:var(--text-hi);font-weight:500}
+
+  /* ── ARG PRESETS ── */
+  .args-combo-wrap{flex:1;display:flex;align-items:center;position:relative}
+  #script-args-input{flex:1;min-width:0;border-radius:3px}
+  .args-combo-wrap #script-args-input{border-radius:3px 0 0 3px;border-right:none}
+  .args-preset-btn{
+    background:var(--bg);border:1px solid var(--border);border-left:none;
+    color:var(--text-dim);padding:4px 6px;font-family:var(--mono);font-size:9px;
+    cursor:pointer;line-height:1;transition:color .1s,background .1s;flex-shrink:0;
+    border-radius:0 3px 3px 0;display:none;
+  }
+  .args-preset-btn:hover{color:var(--text);background:var(--surface)}
+  .args-preset-btn.has-presets{display:block}
+  .args-preset-dropdown{
+    display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;
+    background:var(--panel);border:1px solid var(--border-hi);border-radius:4px;
+    z-index:200;max-height:160px;overflow-y:auto;
+  }
+  .args-preset-dropdown.open{display:block}
+  .args-preset-opt{
+    padding:5px 10px;font-size:11px;color:var(--text);cursor:pointer;
+    white-space:pre;overflow:hidden;text-overflow:ellipsis;
+  }
+  .args-preset-opt:hover{background:var(--surface);color:var(--text-hi)}
+  #edit-args-list-row{display:none;padding:8px 16px}
+  .edit-args-list-label{font-size:9px;letter-spacing:.14em;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px}
+  .arg-preset-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .arg-preset-input{
+    flex:1;background:var(--bg);border:1px solid var(--border);border-radius:3px;
+    padding:4px 8px;color:var(--text-hi);font-family:var(--mono);font-size:11px;
+    outline:none;transition:border-color .15s;
+  }
+  .arg-preset-input:focus{border-color:var(--border-hi)}
+  .arg-preset-del{
+    background:none;border:1px solid var(--border);color:var(--text-dim);
+    border-radius:3px;padding:2px 6px;font-family:var(--mono);font-size:10px;cursor:pointer;
+    transition:border-color .15s,color .15s;flex-shrink:0;
+  }
+  .arg-preset-del:hover{border-color:var(--red);color:var(--red)}
+  #add-arg-preset-btn{
+    background:none;border:1px solid var(--border);color:var(--text-dim);
+    border-radius:3px;padding:3px 10px;font-family:var(--mono);font-size:10px;
+    cursor:pointer;letter-spacing:.06em;margin-top:4px;transition:border-color .15s,color .15s;
+  }
+  #add-arg-preset-btn:hover{border-color:var(--border-hi);color:var(--text)}
+
+  /* ── SMART PARAMS ── */
+  .smart-combo-wrap{
+    flex:1;display:flex;align-items:center;position:relative;
+  }
+  .smart-combo-wrap .inline-param-input,
+  .smart-combo-wrap .var-input,
+  .smart-combo-wrap .custom-var-val{
+    border-radius:3px 0 0 3px;border-right:none;flex:1;min-width:0;
+  }
+  .custom-var-row .smart-combo-wrap{flex:1;min-width:0}
+  .smart-arr-btn{
+    background:var(--bg);border:1px solid var(--border);border-left:none;
+    color:var(--text-dim);padding:4px 6px;font-family:var(--mono);font-size:9px;
+    cursor:pointer;line-height:1;transition:color .1s,background .1s;flex-shrink:0;
+    border-radius:0;
+  }
+  .smart-combo-wrap:not(.has-refresh) .smart-arr-btn{border-radius:0 3px 3px 0}
+  .smart-arr-btn:hover{color:var(--text-hi);background:rgba(255,255,255,.04)}
+  .smart-ref-btn{
+    background:var(--bg);border:1px solid var(--border);border-left:none;
+    border-radius:0 3px 3px 0;color:var(--text-dim);padding:4px 6px;
+    font-family:var(--mono);font-size:10px;cursor:pointer;line-height:1;
+    transition:color .1s,background .1s;flex-shrink:0;
+  }
+  .smart-ref-btn:hover{color:var(--cyan);background:rgba(56,189,248,.08)}
+  .smart-ref-btn.spinning{animation:spin .7s linear infinite}
+  .smart-ref-btn:disabled{opacity:.4;cursor:not-allowed}
+  .smart-dropdown{
+    display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;z-index:500;
+    background:var(--panel);border:1px solid var(--border-hi);border-radius:3px;
+    max-height:180px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.5);
+  }
+  .smart-dropdown.open{display:block}
+  .smart-dropdown::-webkit-scrollbar{width:3px}
+  .smart-dropdown::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px}
+  .smart-opt{
+    padding:5px 9px;font-size:11px;cursor:pointer;color:var(--text);
+    font-family:var(--mono);transition:background .06s;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .smart-opt:hover{background:rgba(61,255,143,.06);color:var(--text-hi)}
+  .smart-opt.smart-sel{color:var(--green)}
+  .smart-opt-empty{
+    padding:6px 9px;font-size:10px;color:var(--text-dim);font-style:italic;
+  }
+
+  /* ── WORKSPACE BAR ── */
+  #workspace-bar{
+    padding:5px 10px;border-bottom:1px solid var(--border);
+    display:none;align-items:center;gap:7px;flex-shrink:0;
+  }
+  #workspace-bar.loaded{display:flex}
+  .ws-label{
+    font-size:9px;letter-spacing:.12em;color:var(--text-dim);
+    text-transform:uppercase;flex-shrink:0;
+  }
+  #ws-wrap{flex:1;position:relative}
+  #ws-btn{
+    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:3px;
+    padding:3px 8px;color:var(--text-hi);font-family:var(--mono);font-size:10px;
+    font-weight:500;letter-spacing:.08em;cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;gap:6px;
+    transition:border-color .15s;text-align:left;
+  }
+  #ws-btn:hover:not(:disabled){border-color:var(--border-hi)}
+  #ws-btn:disabled{cursor:default;opacity:.55}
+  #ws-btn .ws-arrow{color:var(--text-dim);font-size:8px;flex-shrink:0}
+  #ws-dropdown{
+    display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;z-index:400;
+    background:var(--panel);border:1px solid var(--border-hi);border-radius:3px;
+    max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);
+  }
+  #ws-dropdown.open{display:block}
+  #ws-dropdown::-webkit-scrollbar{width:3px}
+  #ws-dropdown::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px}
+  .ws-opt{
+    padding:6px 10px;font-size:10px;cursor:pointer;
+    font-family:var(--mono);letter-spacing:.06em;
+    display:flex;align-items:center;gap:7px;
+    color:var(--text);transition:background .08s;
+  }
+  .ws-opt:hover{background:rgba(61,255,143,.06);color:var(--text-hi)}
+  .ws-opt.ws-active{color:var(--green)}
+  .ws-dot{width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0;opacity:0}
+  .ws-opt.ws-active .ws-dot{opacity:1}
+  .ws-opt-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
@@ -773,9 +935,17 @@
         <div class="logo-icon">
           <svg viewBox="0 0 14 14" fill="none"><polyline points="2,4 6,7 2,10" stroke="#3dff8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="10" x2="12" y2="10" stroke="#3dff8f" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
-        <div class="logo-text">SHELLGATE v.06</div>
+        <div class="logo-text">SHELLGATE v.07</div>
       </div>
       <button id="settings-btn">⚙ TOKEN</button>
+    </div>
+
+    <div id="workspace-bar">
+      <span class="ws-label">WS</span>
+      <div id="ws-wrap">
+        <button id="ws-btn" disabled><span id="ws-name">DEFAULT</span><span class="ws-arrow">▾</span></button>
+        <div id="ws-dropdown"></div>
+      </div>
     </div>
 
     <div id="status-section">
@@ -800,9 +970,7 @@
         <button class="session-btn" id="session-new-btn">NEW</button>
       </div>
       <div class="vars-label">Global Variables</div>
-      <div class="var-row"><span class="var-key">KVNR</span><input class="var-input" id="gvar-KVNR"   placeholder="A123456789" spellcheck="false" autocomplete="off"/></div>
-      <div class="var-row"><span class="var-key">TENANT</span><input class="var-input" id="gvar-TENANT" placeholder="tenant1"    spellcheck="false" autocomplete="off"/></div>
-      <div class="var-row"><span class="var-key">ENV</span><input class="var-input" id="gvar-ENV"    placeholder="prod"        spellcheck="false" autocomplete="off"/></div>
+      <div id="global-vars-fixed"></div>
       <div id="custom-vars"></div>
       <button id="add-var-btn">+ ADD VARIABLE</button>
     </div>
@@ -870,6 +1038,25 @@
           <input id="dest-edit-input" class="dest-edit-input" style="display:none" placeholder="e.g. pod3 -p monitor-pod" spellcheck="false" autocomplete="off"/>
         </div>
       </div>
+      <div id="script-args-row">
+        <div class="args-input-row">
+          <span class="args-key">ARGS</span>
+          <div class="args-combo-wrap">
+            <input id="script-args-input" placeholder="--flag {{VAR}} positional" spellcheck="false" autocomplete="off"/>
+            <button id="args-preset-btn" class="args-preset-btn" tabindex="-1">▾</button>
+            <div id="args-preset-dropdown" class="args-preset-dropdown"></div>
+          </div>
+        </div>
+        <div id="exec-preview-wrap">
+          <div class="exec-preview-label">EXEC</div>
+          <code id="exec-cmd-code"></code>
+        </div>
+      </div>
+      <div id="edit-args-list-row">
+        <div class="edit-args-list-label">ARG PRESETS</div>
+        <div id="edit-args-list"></div>
+        <button id="add-arg-preset-btn">+ ADD PRESET</button>
+      </div>
       <div id="edit-template-row">
         <div class="edit-row-label">TEMPLATE</div>
         <textarea id="edit-template-area" spellcheck="false" autocomplete="off"></textarea>
@@ -925,6 +1112,9 @@ let bgPollTimer = null;
 let tabs = new Map();
 let activeTabId = 'main';
 let tabCounter = 0;
+let workspaces = [];
+let activeWorkspaceId = 'default';
+let smartParams = {};
 
 /* ── Elements ── */
 const tokenModal   = document.getElementById('token-modal');
@@ -973,10 +1163,24 @@ const interactiveInput   = document.getElementById('interactive-input');
 const interactiveSendBtn = document.getElementById('interactive-send-btn');
 const interactiveCloseBtn= document.getElementById('interactive-close-btn');
 const actionDestRow      = document.getElementById('action-dest-row');
+const scriptArgsRow      = document.getElementById('script-args-row');
+const scriptArgsInput    = document.getElementById('script-args-input');
+const execCmdCode        = document.getElementById('exec-cmd-code');
+const argsPresetBtn      = document.getElementById('args-preset-btn');
+const argsPresetDropdown = document.getElementById('args-preset-dropdown');
+const editArgsListRow    = document.getElementById('edit-args-list-row');
+const editArgsList       = document.getElementById('edit-args-list');
+const addArgPresetBtn    = document.getElementById('add-arg-preset-btn');
+scriptArgsInput.addEventListener('input', refreshPreviewCmd);
+let scriptArgPresets = [];
 const libHoverToggle     = document.getElementById('lib-hover-toggle');
 const sidebarEl          = document.getElementById('sidebar');
 const destView           = document.getElementById('dest-view');
 const destEditInput      = document.getElementById('dest-edit-input');
+const workspaceBar       = document.getElementById('workspace-bar');
+const wsBtn              = document.getElementById('ws-btn');
+const wsNameEl           = document.getElementById('ws-name');
+const wsDropdown         = document.getElementById('ws-dropdown');
 
 /* ── Favorites ── */
 function loadFavorites(){
@@ -1060,26 +1264,45 @@ function renderCustomVars(){
   customVars.forEach(cv=>{
     const row=document.createElement('div');
     row.className='custom-var-row';
-    row.innerHTML=`
-      <input class="custom-var-key" type="text" value="${esc(cv.key)}" placeholder="KEY" maxlength="40" spellcheck="false" autocomplete="off"/>
-      <input class="custom-var-val" type="text" value="${esc(cv.value)}" placeholder="value" spellcheck="false" autocomplete="off"/>
-      <button class="custom-var-remove" title="Remove">×</button>`;
-    const keyInp=row.querySelector('.custom-var-key');
-    const valInp=row.querySelector('.custom-var-val');
-    row.querySelector('.custom-var-remove').addEventListener('click',()=>{
-      customVars=customVars.filter(x=>x.id!==cv.id);
-      row.remove();
-      refreshPreviewCmd();
+
+    const keyInp=document.createElement('input');
+    keyInp.className='custom-var-key'; keyInp.type='text';
+    keyInp.value=cv.key; keyInp.placeholder='KEY';
+    keyInp.maxLength=40; keyInp.spellcheck=false; keyInp.autocomplete='off';
+    row.appendChild(keyInp);
+
+    const sp=smartParams[cv.key];
+    if(sp){
+      const combo=_buildSmartComboWrap(cv.key,null,'custom-var-val',cv.value,sp,
+        (val)=>{ cv.value=val; refreshPreviewCmd(); }
+      );
+      row.appendChild(combo);
+    } else {
+      const valInp=document.createElement('input');
+      valInp.className='custom-var-val'; valInp.type='text';
+      valInp.value=cv.value; valInp.placeholder='value';
+      valInp.spellcheck=false; valInp.autocomplete='off';
+      valInp.addEventListener('input',()=>{ cv.value=valInp.value; refreshPreviewCmd(); });
+      row.appendChild(valInp);
+    }
+
+    const removeBtn=document.createElement('button');
+    removeBtn.className='custom-var-remove'; removeBtn.title='Remove'; removeBtn.textContent='×';
+    removeBtn.addEventListener('click',()=>{
+      customVars=customVars.filter(x=>x.id!==cv.id); row.remove(); refreshPreviewCmd();
     });
+    row.appendChild(removeBtn);
+
+    const prevKey=cv.key;
     keyInp.addEventListener('input',()=>{
       cv.key=keyInp.value.toUpperCase().replace(/[^A-Z0-9_]/g,'');
-      keyInp.value=cv.key;
-      refreshPreviewCmd();
+      keyInp.value=cv.key; refreshPreviewCmd();
     });
-    valInp.addEventListener('input',()=>{
-      cv.value=valInp.value;
-      refreshPreviewCmd();
+    keyInp.addEventListener('blur',()=>{
+      const hadSp=!!smartParams[prevKey]; const hasSp=!!smartParams[cv.key];
+      if(hadSp!==hasSp) renderCustomVars();
     });
+
     customVarsEl.appendChild(row);
   });
 }
@@ -1104,11 +1327,6 @@ function getGlobalVars(){
   });
   return v;
 }
-
-GLOBAL_VAR_KEYS.forEach(k=>{
-  const el=document.getElementById('gvar-'+k);
-  if(el) el.addEventListener('input',()=>{ refreshPreviewCmd(); renderSessionDropdown(); });
-});
 
 /* ── Sessions ── */
 function currentSessionId(){
@@ -1289,7 +1507,7 @@ async function submitToken(){
     await loadSessions();
     restoreLastSession();
     loadStatus().then(startStatusAutoRefresh);
-    refreshJobs(); startBgPoll();
+    refreshJobs(); startBgPoll(); loadWorkspaces(); loadSmartParams();
   }catch{showTokenModal(true);}
 }
 settingsBtn.addEventListener('click',()=>{ localStorage.removeItem('auth_token'); token=''; if(statusRefreshTimer) clearInterval(statusRefreshTimer); if(bgPollTimer) clearInterval(bgPollTimer); showTokenModal(false); });
@@ -1428,6 +1646,7 @@ async function selectScript(name,itemEl){
     selected={type:'script',name,itemEl,entry:{name,template:data.content,params:data.params}};
     setActive(itemEl,'script');
     showActionPanel('script',name,null,selected.entry);
+    await loadScriptArgPresets(name);
   }catch{}
 }
 
@@ -1459,6 +1678,15 @@ function showActionPanel(type,name,cat,entry){
     actionDestRow.style.display='none';
     destView.innerHTML='';
   }
+  if(type==='script'){
+    scriptArgsRow.style.display='block';
+    scriptArgsInput.value='';
+    argsPresetDropdown.classList.remove('open');
+  } else {
+    scriptArgsRow.style.display='none';
+    scriptArgPresets=[];
+    argsPresetBtn.classList.remove('has-presets');
+  }
   buildInlineParams(entry);
   refreshPreviewCmd();
   actionPanel.classList.add('visible');
@@ -1473,6 +1701,7 @@ function hideActionPanel(){
   interactiveBtn.style.display='none';
   bgBtn.style.display='none';
   actionDestRow.style.display='none';
+  scriptArgsRow.style.display='none';
   selected=null;
 }
 
@@ -1491,6 +1720,11 @@ function enterEditMode(){
   execBtn.style.display='none';
   interactiveBtn.style.display='none';
   bgBtn.style.display='none';
+  scriptArgsRow.style.display='none';
+  if(selected.type==='script'){
+    editArgsListRow.style.display='block';
+    renderEditArgsList();
+  }
   if(selected.type==='library'){
     actionDestRow.style.display='block';
     destView.style.display='none';
@@ -1530,6 +1764,8 @@ function exitEditMode(restore){
   } else {
     actionDestRow.style.display='none';
   }
+  editArgsListRow.style.display='none';
+  if(selected&&selected.type==='script') scriptArgsRow.style.display='block';
   if(selected) editBtn.style.display='inline-block';
 }
 
@@ -1572,8 +1808,10 @@ editSaveBtn.addEventListener('click',async()=>{
     selected.entry.template=newContent;
     selected.entry.params=extractParams(newContent);
     if(selected.type==='library') selected.entry.destination=destEditInput.value.trim();
+    if(selected.type==='script') await saveScriptArgPresets(selected.name);
     exitEditMode(false);
     editBtn.style.display='inline-block';
+    if(selected.type==='script') renderArgPresetDropdown();
     if(selected.type==='library'){ await loadLibraries(); renderFavoritesSection(); }
   }catch(e){ editError.textContent=e.message; editError.classList.add('visible'); }
   finally{ editSaveBtn.disabled=false; }
@@ -1589,16 +1827,21 @@ function buildInlineParams(entry){
   const globals=getGlobalVars();
   entry.params.forEach(p=>{
     const val=globals[p]||'';
-    const wrap=document.createElement('div');
-    wrap.className='inline-param';
-    wrap.innerHTML=`
-      <span class="inline-param-key">${esc(p)}</span>
-      <input class="inline-param-input ${val?'prefilled':''}"
-        id="iparam-${esc(p)}" type="text" value="${esc(val)}" placeholder="${esc(p)}"
-        data-key="${esc(p)}" autocomplete="off" spellcheck="false"/>`;
-    paramsWrap.appendChild(wrap);
+    const sp=smartParams[p];
+    if(sp){
+      paramsWrap.appendChild(buildSmartCombo(p,val,sp));
+    } else {
+      const wrap=document.createElement('div');
+      wrap.className='inline-param';
+      wrap.innerHTML=`
+        <span class="inline-param-key">${esc(p)}</span>
+        <input class="inline-param-input ${val?'prefilled':''}"
+          id="iparam-${esc(p)}" type="text" value="${esc(val)}" placeholder="${esc(p)}"
+          data-key="${esc(p)}" autocomplete="off" spellcheck="false"/>`;
+      paramsWrap.appendChild(wrap);
+    }
   });
-  paramsWrap.querySelectorAll('.inline-param-input').forEach(inp=>{
+  paramsWrap.querySelectorAll('.inline-param-input:not([data-smart])').forEach(inp=>{
     inp.addEventListener('input',()=>{
       inp.classList.toggle('prefilled',!!inp.value.trim());
       inp.classList.remove('missing');
@@ -1606,6 +1849,145 @@ function buildInlineParams(entry){
     });
   });
   updateExecBtn();
+}
+
+function _buildSmartComboWrap(paramName, inputId, inputClass, initVal, sp, onChangeCb){
+  const comboWrap=document.createElement('div');
+  comboWrap.className='smart-combo-wrap'+(sp.type==='script'?' has-refresh':'');
+
+  const input=document.createElement('input');
+  input.className=inputClass+(initVal?' prefilled':'');
+  if(inputId) input.id=inputId;
+  input.type='text';
+  input.value=initVal;
+  input.placeholder=paramName;
+  input.dataset.key=paramName;
+  input.dataset.smart='true';
+  input.autocomplete='off';
+  input.spellcheck=false;
+  input.addEventListener('input',()=>{
+    input.classList.toggle('prefilled',!!input.value.trim());
+    input.classList.remove('missing');
+    onChangeCb(input.value);
+  });
+  comboWrap.appendChild(input);
+
+  const arrBtn=document.createElement('button');
+  arrBtn.className='smart-arr-btn';
+  arrBtn.type='button';
+  arrBtn.title='Options';
+  arrBtn.textContent='▾';
+  comboWrap.appendChild(arrBtn);
+
+  const dropdown=document.createElement('div');
+  dropdown.className='smart-dropdown';
+  dropdown.dataset.param=paramName;
+  comboWrap.appendChild(dropdown);
+
+  if(sp.type==='script'){
+    const refBtn=document.createElement('button');
+    refBtn.className='smart-ref-btn';
+    refBtn.type='button';
+    refBtn.title='Refresh options';
+    refBtn.textContent='↺';
+    refBtn.addEventListener('click',async e=>{
+      e.stopPropagation();
+      refBtn.disabled=true; refBtn.classList.add('spinning');
+      await fetchSmartParam(paramName);
+      refBtn.classList.remove('spinning'); refBtn.disabled=false;
+      if(dropdown.classList.contains('open')) populateSmartDropdown(dropdown,paramName,input);
+    });
+    comboWrap.appendChild(refBtn);
+  }
+
+  arrBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const wasOpen=dropdown.classList.contains('open');
+    document.querySelectorAll('.smart-dropdown.open').forEach(d=>d.classList.remove('open'));
+    if(!wasOpen){ populateSmartDropdown(dropdown,paramName,input); dropdown.classList.add('open'); }
+  });
+
+  return comboWrap;
+}
+
+function buildSmartCombo(paramName,initVal,sp){
+  const wrap=document.createElement('div');
+  wrap.className='inline-param';
+  const keySpan=document.createElement('span');
+  keySpan.className='inline-param-key';
+  keySpan.textContent=paramName;
+  wrap.appendChild(keySpan);
+  wrap.appendChild(_buildSmartComboWrap(paramName,'iparam-'+paramName,'inline-param-input',initVal,sp,
+    ()=>{ refreshPreviewCmd(); updateExecBtn(); }
+  ));
+  return wrap;
+}
+
+function buildSmartComboForGvar(key,val,sp){
+  return _buildSmartComboWrap(key,'gvar-'+key,'var-input',val,sp,
+    ()=>{ refreshPreviewCmd(); renderSessionDropdown(); }
+  );
+}
+
+/* ── Global Vars (dynamic) ── */
+const GVAR_PLACEHOLDER={KVNR:'A123456789',TENANT:'tenant1',ENV:'prod'};
+
+function renderGlobalVarsFixed(){
+  const container=document.getElementById('global-vars-fixed');
+  if(!container) return;
+  const saved={};
+  GLOBAL_VAR_KEYS.forEach(k=>{ const el=document.getElementById('gvar-'+k); if(el) saved[k]=el.value; });
+  container.innerHTML='';
+  GLOBAL_VAR_KEYS.forEach(k=>{
+    const val=saved[k]||'';
+    const sp=smartParams[k];
+    const row=document.createElement('div');
+    row.className='var-row';
+    const keySpan=document.createElement('span');
+    keySpan.className='var-key';
+    keySpan.textContent=k;
+    row.appendChild(keySpan);
+    if(sp){
+      row.appendChild(buildSmartComboForGvar(k,val,sp));
+    } else {
+      const inp=document.createElement('input');
+      inp.className='var-input'; inp.id='gvar-'+k;
+      inp.placeholder=GVAR_PLACEHOLDER[k]||k;
+      inp.spellcheck=false; inp.autocomplete='off'; inp.value=val;
+      inp.addEventListener('input',()=>{ refreshPreviewCmd(); renderSessionDropdown(); });
+      row.appendChild(inp);
+    }
+    container.appendChild(row);
+  });
+}
+
+function populateSmartDropdown(dropdown,paramName,input){
+  const sp=smartParams[paramName];
+  const opts=sp?.options||[];
+  dropdown.innerHTML='';
+  if(sp?.loading){
+    const d=document.createElement('div'); d.className='smart-opt-empty'; d.textContent='loading…';
+    dropdown.appendChild(d); return;
+  }
+  if(!opts.length){
+    const d=document.createElement('div'); d.className='smart-opt-empty';
+    d.textContent=sp?.type==='script'?'click ↺ to fetch':'no options';
+    dropdown.appendChild(d); return;
+  }
+  const cur=input.value;
+  opts.forEach(opt=>{
+    const d=document.createElement('div');
+    d.className='smart-opt'+(opt===cur?' smart-sel':'');
+    d.textContent=opt;
+    d.addEventListener('mousedown',e=>e.preventDefault());
+    d.addEventListener('click',()=>{
+      input.value=opt;
+      input.classList.add('prefilled'); input.classList.remove('missing');
+      dropdown.classList.remove('open');
+      refreshPreviewCmd(); updateExecBtn();
+    });
+    dropdown.appendChild(d);
+  });
 }
 
 function updateExecBtn(){
@@ -1633,12 +2015,91 @@ function resolveTemplate(template,params){
   return s;
 }
 
+function getResolvedArgs(){
+  if(!scriptArgsInput) return '';
+  const raw=scriptArgsInput.value.trim();
+  if(!raw) return '';
+  const params={...getGlobalVars(), ...getCurrentInlineParams()};
+  return resolveTemplate(raw, params);
+}
+
+async function loadScriptArgPresets(scriptName){
+  scriptArgPresets=[];
+  try{
+    const res=await fetch(`/api/scripts/${encodeURIComponent(scriptName)}/arglist?token=${encodeURIComponent(token)}`);
+    if(res.ok){ const d=await res.json(); scriptArgPresets=d.args||[]; }
+  }catch{}
+  renderArgPresetDropdown();
+}
+
+function renderArgPresetDropdown(){
+  argsPresetDropdown.innerHTML='';
+  argsPresetBtn.classList.toggle('has-presets', scriptArgPresets.length>0);
+  scriptArgPresets.forEach(preset=>{
+    const opt=document.createElement('div');
+    opt.className='args-preset-opt'; opt.textContent=preset;
+    opt.addEventListener('mousedown',e=>{ e.preventDefault(); scriptArgsInput.value=preset; refreshPreviewCmd(); argsPresetDropdown.classList.remove('open'); });
+    argsPresetDropdown.appendChild(opt);
+  });
+}
+
+argsPresetBtn.addEventListener('click',e=>{
+  e.stopPropagation();
+  argsPresetDropdown.classList.toggle('open');
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.args-combo-wrap')) argsPresetDropdown.classList.remove('open');
+});
+
+function renderEditArgsList(){
+  editArgsList.innerHTML='';
+  [...scriptArgPresets].forEach((preset,i)=>{
+    const row=document.createElement('div'); row.className='arg-preset-row';
+    const inp=document.createElement('input');
+    inp.className='arg-preset-input'; inp.value=preset; inp.spellcheck=false;
+    inp.autocomplete='off';
+    const del=document.createElement('button');
+    del.className='arg-preset-del'; del.textContent='✕';
+    del.addEventListener('click',()=>{
+      scriptArgPresets=[...[...editArgsList.querySelectorAll('.arg-preset-input')].map(x=>x.value)];
+      scriptArgPresets.splice(i,1);
+      renderEditArgsList();
+    });
+    row.appendChild(inp); row.appendChild(del);
+    editArgsList.appendChild(row);
+  });
+}
+
+addArgPresetBtn.addEventListener('click',()=>{
+  scriptArgPresets.push('');
+  renderEditArgsList();
+  editArgsList.querySelector('.arg-preset-row:last-child .arg-preset-input')?.focus();
+});
+
+async function saveScriptArgPresets(scriptName){
+  const inputs=[...editArgsList.querySelectorAll('.arg-preset-input')];
+  const args=inputs.map(inp=>inp.value.trim()).filter(Boolean);
+  scriptArgPresets=args;
+  try{
+    await fetch(`/api/scripts/${encodeURIComponent(scriptName)}/arglist?token=${encodeURIComponent(token)}`,{
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({args})
+    });
+  }catch(e){ console.error('arglist save failed',e); }
+}
+
 function refreshPreviewCmd(){
   if(!selected) return;
   const params=getCurrentInlineParams();
   previewCmd.innerHTML=renderTemplateHtml(selected.entry.template,params);
   if(selected.type==='library'&&selected.entry.destination&&!editMode){
     destView.innerHTML=renderTemplateHtml(selected.entry.destination,params);
+  }
+  if(selected.type==='script'&&execCmdCode){
+    const resolvedArgs=getResolvedArgs();
+    const scriptPart=`<span class="cmd-script">${esc(selected.name)}</span>`;
+    const argsPart=resolvedArgs?` ${esc(resolvedArgs)}`:'';
+    execCmdCode.innerHTML=`<span class="cmd-bash">bash</span> ${scriptPart}${argsPart}`;
   }
 }
 
@@ -1664,8 +2125,8 @@ execBtn.addEventListener('click',()=>{
   if(!ok) return;
   if(selected.type==='script'){
     const{name,itemEl}=selected;
-    if(Object.keys(params).length>0) runScriptWithParams(name,itemEl,params);
-    else runScript(name,itemEl);
+    const args=getResolvedArgs();
+    runScriptWithParams(name,itemEl,params,args);
   } else {
     execLibraryEntry(selected.filename,selected.entry.name,params,selected.entry);
   }
@@ -1681,7 +2142,8 @@ interactiveBtn.addEventListener('click',()=>{
   if(!ok) return;
   if(selected.type==='script'){
     const{name,itemEl}=selected;
-    runScriptInteractive(name,itemEl,params);
+    const args=getResolvedArgs();
+    runScriptInteractive(name,itemEl,params,args);
   } else {
     execLibraryInteractive(selected.filename,selected.entry.name,params,selected.entry);
   }
@@ -1699,14 +2161,15 @@ function runScript(name,itemEl){
   wireWs(activeWs);
 }
 
-function runScriptWithParams(name,itemEl,params){
+function runScriptWithParams(name,itemEl,params,args=''){
   setActive(itemEl,'script'); setRunning(true);
   clearOutput(); appendPromptLine(null,name);
   const pe=Object.entries(params);
   if(pe.length) appendLine('$ '+pe.map(([k,v])=>k+'='+v).join(' ')+'\n','meta');
+  if(args) appendLine('$ args: '+args+'\n','meta');
   const proto=location.protocol==='https:'?'wss:':'ws:';
   activeWs=new WebSocket(`${proto}//${location.host}/ws/run-with-params/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}${sidParam()}`);
-  activeWs.addEventListener('open',()=>activeWs.send(JSON.stringify({params})));
+  activeWs.addEventListener('open',()=>activeWs.send(JSON.stringify({params,args})));
   wireWs(activeWs);
 }
 
@@ -1734,15 +2197,16 @@ function execLibraryEntry(filename,entryName,params,entryHint){
   wireWs(activeWs);
 }
 
-function runScriptInteractive(name,itemEl,params){
+function runScriptInteractive(name,itemEl,params,args=''){
   setActive(itemEl,'script');
   const tabId=openInteractiveTab(name);
   appendPromptLine(null,name,tabId);
   const pe=Object.entries(params);
   if(pe.length) appendLine('$ '+pe.map(([k,v])=>k+'='+v).join(' ')+'\n','meta',tabId);
+  if(args) appendLine('$ args: '+args+'\n','meta',tabId);
   const proto=location.protocol==='https:'?'wss:':'ws:';
   const ws=new WebSocket(`${proto}//${location.host}/ws/run-interactive/${encodeURIComponent(name)}?token=${encodeURIComponent(token)}${sidParam()}`);
-  ws.addEventListener('open',()=>ws.send(JSON.stringify({params})));
+  ws.addEventListener('open',()=>ws.send(JSON.stringify({params,args})));
   wireWs(ws,tabId);
 }
 
@@ -2319,7 +2783,7 @@ bgBtn.addEventListener('click',async()=>{
   });
   if(!ok) return;
   const body=selected.type==='script'
-    ?{type:'script',name:selected.name,params}
+    ?{type:'script',name:selected.name,params,args:getResolvedArgs()}
     :{type:'library',library:selected.filename,name:selected.entry.name,params};
   try{
     const res=await fetch(`/api/jobs?token=${encodeURIComponent(token)}`,{
@@ -2425,6 +2889,126 @@ function closeTab(id){
   else renderTabBar();
 }
 
+/* ── Smart Params ── */
+async function loadSmartParams(){
+  if(!token) return;
+  try{
+    const res=await fetch(`/api/smart-params?token=${encodeURIComponent(token)}`);
+    if(!res.ok) return;
+    smartParams=await res.json();
+    renderGlobalVarsFixed();
+    renderCustomVars();
+    if(selected) buildInlineParams(selected.entry);
+    // Auto-fetch unfetched script params (fire-and-forget)
+    for(const [name,sp] of Object.entries(smartParams)){
+      if(sp.type==='script'&&!sp.fetched) fetchSmartParam(name);
+    }
+  }catch{}
+}
+
+async function fetchSmartParam(name){
+  if(!smartParams[name]) smartParams[name]={type:'script',options:[],fetched:false};
+  smartParams[name].loading=true;
+  try{
+    const res=await fetch(`/api/smart-params/${encodeURIComponent(name)}/refresh?token=${encodeURIComponent(token)}`,{method:'POST'});
+    if(!res.ok) return;
+    const data=await res.json();
+    smartParams[name].options=data.options;
+    smartParams[name].fetched=true;
+  }catch{}
+  finally{
+    smartParams[name].loading=false;
+    _updateSmartDropdowns(name);
+  }
+}
+
+function _updateSmartDropdowns(name){
+  document.querySelectorAll(`.smart-dropdown[data-param="${CSS.escape(name)}"].open`).forEach(dd=>{
+    const input=dd.closest('.smart-combo-wrap')?.querySelector('input');
+    if(input) populateSmartDropdown(dd,name,input);
+  });
+}
+
+// Close all smart dropdowns on outside click
+document.addEventListener('click',()=>{
+  document.querySelectorAll('.smart-dropdown.open').forEach(d=>d.classList.remove('open'));
+});
+
+/* ── Workspaces ── */
+async function loadWorkspaces(){
+  if(!token) return;
+  try{
+    const res=await fetch(`/api/workspaces?token=${encodeURIComponent(token)}`);
+    if(!res.ok) return;
+    workspaces=await res.json();
+    const cur=await fetch(`/api/workspace?token=${encodeURIComponent(token)}`);
+    if(cur.ok){ const d=await cur.json(); activeWorkspaceId=d.id||'default'; }
+    renderWsBar();
+  }catch{}
+}
+
+function renderWsBar(){
+  const ws=workspaces.find(w=>w.id===activeWorkspaceId);
+  wsNameEl.textContent=ws?(ws.name||ws.id).toUpperCase():activeWorkspaceId.toUpperCase();
+  workspaceBar.classList.add('loaded');
+  wsBtn.disabled=workspaces.length<=1;
+}
+
+function populateWsDropdown(){
+  wsDropdown.innerHTML='';
+  workspaces.forEach(ws=>{
+    const d=document.createElement('div');
+    d.className='ws-opt'+(ws.id===activeWorkspaceId?' ws-active':'');
+    d.innerHTML=`<span class="ws-dot"></span><span class="ws-opt-name">${esc(ws.name||ws.id)}</span>`;
+    d.addEventListener('mousedown',e=>e.preventDefault());
+    d.addEventListener('click',()=>switchWorkspace(ws.id));
+    wsDropdown.appendChild(d);
+  });
+}
+
+wsBtn.addEventListener('click',()=>{
+  if(wsBtn.disabled) return;
+  populateWsDropdown();
+  wsDropdown.classList.toggle('open');
+});
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#ws-wrap')) wsDropdown.classList.remove('open');
+});
+
+async function switchWorkspace(id){
+  wsDropdown.classList.remove('open');
+  if(id===activeWorkspaceId) return;
+  const prev=wsNameEl.textContent;
+  wsNameEl.textContent='...';
+  wsBtn.disabled=true;
+  try{
+    const res=await fetch(`/api/workspace?token=${encodeURIComponent(token)}`,{
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id})
+    });
+    if(!res.ok){ wsNameEl.textContent=prev; wsBtn.disabled=workspaces.length<=1; return; }
+    const data=await res.json();
+    activeWorkspaceId=data.id;
+    renderWsBar();
+    // Rescope sidebar
+    selected=null; hideActionPanel();
+    terminalTitle.innerHTML='<span>SELECT A SCRIPT</span>';
+    const fi=document.getElementById('filter-input'); if(fi) fi.value=''; if(window.refreshFilter) refreshFilter();
+    // Clear session state, reload from new workspace
+    sessions={}; setActiveSession(''); renderSessionDropdown();
+    localStorage.removeItem('last_session_id');
+    GLOBAL_VAR_KEYS.forEach(k=>{ const el=document.getElementById('gvar-'+k); if(el) el.value=''; });
+    customVars=[]; renderCustomVars(); refreshPreviewCmd();
+    smartParams={};
+    await loadSmartParams();
+    await loadScripts();
+    await loadLibraries();
+    renderFavoritesSection();
+    await loadSessions();
+    await loadStatus();
+  }catch{ wsNameEl.textContent=prev; wsBtn.disabled=workspaces.length<=1; }
+}
+
 /* ── Status ── */
 let statusNames = [];
 let statusValues = {};
@@ -2487,9 +3071,10 @@ function esc(s){
 
 /* ── Init ── */
 loadFavorites();
+renderGlobalVarsFixed();
 tabs.set('main',{id:'main',title:'MAIN',type:'main',ws:null,running:false,contentEl:document.getElementById('tab-main'),outputEl:output,ansiState:newAnsiState()});
 renderTabBar();
-if(token){ loadScripts(); loadLibraries().then(renderFavoritesSection); loadSessions().then(restoreLastSession); loadStatus().then(startStatusAutoRefresh); refreshJobs(); startBgPoll(); }
+if(token){ loadScripts(); loadLibraries().then(renderFavoritesSection); loadSessions().then(restoreLastSession); loadStatus().then(startStatusAutoRefresh); refreshJobs(); startBgPoll(); loadWorkspaces(); loadSmartParams(); }
 else showTokenModal(false);
 
 })();

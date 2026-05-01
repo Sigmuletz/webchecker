@@ -2,6 +2,7 @@
   "Brasov_A1234": {
     "KVNR": "A1234",
     "TENANT": "Brasov",
-    "ENV": "prod"
+    "ENV": "prod",
+    "USER_ID": "asdfasd"
   }
 }

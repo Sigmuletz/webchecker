@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +13,8 @@ from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocket
 from fastapi.responses import FileResponse, JSONResponse
 
 from auth import TokenAuth, ws_auth
-from config import HOST, LIBRARIES_DIR, LOGS_DIR, PORT, SCRIPTS_DIR, SSL_CERT, SSL_KEY, STATUS_DIR
+import config
+from config import HOST, PORT, SSL_CERT, SSL_KEY, WORKSPACES_FILE
 from library import PARAM_RE, _resolve_entry, _validate_lib_path, parse_library_file, resolve_library, resolve_script
 from runner import _run_pty_session, stream_proc
 from sessions import _append_session_log, _load_sessions, _save_sessions, _session_log_path, _sessions_lock
@@ -22,6 +24,27 @@ log = logging.getLogger(__name__)
 
 app = FastAPI()
 BACKGROUND_JOBS: dict = {}
+_active_workspace_id: str = "default"
+_smart_params_cache: dict[str, list[str]] = {}
+
+
+def _load_workspaces() -> list:
+    default = [{
+        "id": "default",
+        "name": "DEFAULT",
+        "scripts_dir":   str(config.SCRIPTS_DIR),
+        "libraries_dir": str(config.LIBRARIES_DIR),
+        "status_dir":    str(config.STATUS_DIR),
+        "logs_dir":      str(config.LOGS_DIR),
+    }]
+    if not WORKSPACES_FILE.exists():
+        return default
+    try:
+        data = json.loads(WORKSPACES_FILE.read_text())
+        return data if isinstance(data, list) and data else default
+    except Exception:
+        log.warning("Failed to parse workspaces file")
+        return default
 
 
 async def _watch_job(job_id: str, proc, tmp_path=None):
@@ -36,18 +59,116 @@ async def _watch_job(job_id: str, proc, tmp_path=None):
 
 # ── HTTP endpoints ────────────────────────────────────────────────────────────
 
+@app.get("/api/workspaces")
+def list_workspaces(_: TokenAuth):
+    return JSONResponse(_load_workspaces())
+
+
+@app.get("/api/workspace")
+def get_workspace(_: TokenAuth):
+    return JSONResponse({"id": _active_workspace_id})
+
+
+@app.post("/api/workspace")
+async def set_workspace(request: Request, _: TokenAuth):
+    global _active_workspace_id
+    body = await request.json()
+    ws_id = body.get("id", "")
+    workspaces = _load_workspaces()
+    ws = next((w for w in workspaces if w["id"] == ws_id), None)
+    if not ws:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    cwd = Path(".")
+
+    def _resolve(raw: str, fallback: Path) -> Path:
+        p = Path(raw) if raw else fallback
+        return p if p.is_absolute() else (cwd / p).resolve()
+
+    scripts_dir   = _resolve(ws.get("scripts_dir",   ""), config.SCRIPTS_DIR)
+    libraries_dir = _resolve(ws.get("libraries_dir", ""), config.LIBRARIES_DIR)
+    status_dir    = _resolve(ws.get("status_dir",    ""), config.STATUS_DIR)
+    logs_dir      = _resolve(ws.get("logs_dir",      ""), config.LOGS_DIR)
+    sess_file     = _resolve(ws.get("sessions_file", ""), config.SESSIONS_FILE) \
+                    if ws.get("sessions_file") else None
+    sp_file       = _resolve(ws.get("smart_params_file", ""), config.SMART_PARAMS_FILE) \
+                    if ws.get("smart_params_file") else None
+
+    config.switch_workspace(scripts_dir, libraries_dir, status_dir, logs_dir, sess_file, sp_file)
+    _smart_params_cache.clear()
+    _active_workspace_id = ws_id
+    return JSONResponse({"ok": True, "id": ws_id, "name": ws.get("name", ws_id)})
+
+
+def _load_smart_params_def() -> dict:
+    path = config.get_smart_params_file()
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        log.warning("Failed to parse smart_params file")
+        return {}
+
+
+@app.get("/api/smart-params")
+def get_smart_params(_: TokenAuth):
+    defs = _load_smart_params_def()
+    result = {}
+    for name, cfg in defs.items():
+        entry: dict = {"type": cfg.get("type", "static")}
+        if cfg.get("type") == "script":
+            entry["script"]  = cfg.get("script", "")
+            entry["options"] = _smart_params_cache.get(name, [])
+            entry["fetched"] = name in _smart_params_cache
+        else:
+            entry["options"] = cfg.get("options", [])
+        result[name] = entry
+    return JSONResponse(result)
+
+
+@app.post("/api/smart-params/{param_name}/refresh")
+async def refresh_smart_param(param_name: str, _: TokenAuth):
+    defs = _load_smart_params_def()
+    if param_name not in defs:
+        raise HTTPException(status_code=404, detail="Param not defined")
+    cfg = defs[param_name]
+    if cfg.get("type") != "script":
+        raise HTTPException(status_code=400, detail="Not a script param")
+    script_name = cfg.get("script", "")
+    try:
+        script_path = resolve_script(script_name)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail=f"Script not found: {script_name}")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "bash", str(script_path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=30.0)
+        options = [l for l in stdout.decode(errors="replace").splitlines() if l.strip()]
+        _smart_params_cache[param_name] = options
+        return JSONResponse({"ok": True, "options": options})
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Script timed out")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/status")
 def list_status(_: TokenAuth):
-    if not STATUS_DIR.exists():
+    status_dir = config.get_status_dir()
+    if not status_dir.exists():
         return JSONResponse([])
-    return JSONResponse(sorted(f.stem for f in STATUS_DIR.iterdir() if f.suffix == ".sh" and f.is_file()))
+    return JSONResponse(sorted(f.stem for f in status_dir.iterdir() if f.suffix == ".sh" and f.is_file()))
 
 
 @app.get("/api/status/run")
 async def run_status(_: TokenAuth):
-    if not STATUS_DIR.exists():
+    status_dir = config.get_status_dir()
+    if not status_dir.exists():
         return JSONResponse({})
-    scripts = [f for f in STATUS_DIR.iterdir() if f.suffix == ".sh" and f.is_file()]
+    scripts = [f for f in status_dir.iterdir() if f.suffix == ".sh" and f.is_file()]
 
     async def _run(path: Path):
         try:
@@ -68,16 +189,17 @@ async def run_status(_: TokenAuth):
 
 @app.get("/api/scripts")
 def list_scripts(_: TokenAuth):
-    if not SCRIPTS_DIR.exists():
+    scripts_dir = config.get_scripts_dir()
+    if not scripts_dir.exists():
         return JSONResponse([])
-    return JSONResponse(sorted(f.name for f in SCRIPTS_DIR.iterdir() if f.suffix == ".sh" and f.is_file()))
+    return JSONResponse(sorted(f.name for f in scripts_dir.iterdir() if f.suffix == ".sh" and f.is_file()))
 
 
 @app.get("/api/logs/{session_id}")
 def get_session_log(session_id: str, _: TokenAuth):
     path = _session_log_path(session_id)
     if not path.exists():
-        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        config.get_logs_dir().mkdir(parents=True, exist_ok=True)
         path.touch()
         return JSONResponse([])
     entries = []
@@ -101,10 +223,11 @@ def get_script_content(script_name: str, _: TokenAuth):
 
 @app.get("/api/libraries")
 def list_libraries(_: TokenAuth):
-    if not LIBRARIES_DIR.exists():
+    libraries_dir = config.get_libraries_dir()
+    if not libraries_dir.exists():
         return JSONResponse({})
     result = {}
-    for lib_file in sorted(LIBRARIES_DIR.iterdir()):
+    for lib_file in sorted(libraries_dir.iterdir()):
         if lib_file.is_file():
             category = lib_file.stem.replace("_library", "").replace("_", " ").upper()
             result[lib_file.name] = {
@@ -123,8 +246,35 @@ async def update_script(script_name: str, request: Request, _: TokenAuth):
     return JSONResponse({"ok": True})
 
 
+@app.get("/api/scripts/{script_name}/arglist")
+def get_script_arglist(script_name: str, _: TokenAuth):
+    script_path = resolve_script(script_name)
+    arglist_path = script_path.parent / (script_name + ".args.json")
+    if not arglist_path.exists():
+        return JSONResponse({"args": []})
+    try:
+        data = json.loads(arglist_path.read_text())
+        return JSONResponse({"args": data if isinstance(data, list) else []})
+    except Exception:
+        return JSONResponse({"args": []})
+
+
+@app.put("/api/scripts/{script_name}/arglist")
+async def update_script_arglist(script_name: str, request: Request, _: TokenAuth):
+    script_path = resolve_script(script_name)
+    arglist_path = script_path.parent / (script_name + ".args.json")
+    body = await request.json()
+    args = body.get("args", [])
+    if not isinstance(args, list):
+        raise HTTPException(status_code=400, detail="args must be a list")
+    args = [str(a) for a in args if str(a).strip()]
+    await asyncio.to_thread(arglist_path.write_text, json.dumps(args, indent=2))
+    return JSONResponse({"ok": True})
+
+
 @app.post("/api/scripts")
 async def create_script(request: Request, _: TokenAuth):
+    scripts_dir = config.get_scripts_dir()
     body = await request.json()
     name = body.get("name", "").strip()
     content = body.get("content", "")
@@ -132,12 +282,12 @@ async def create_script(request: Request, _: TokenAuth):
         raise HTTPException(status_code=400, detail="Name required")
     if not name.endswith(".sh"):
         name += ".sh"
-    path = (SCRIPTS_DIR / name).resolve()
-    if SCRIPTS_DIR not in path.parents:
+    path = (scripts_dir / name).resolve()
+    if scripts_dir not in path.parents:
         raise HTTPException(status_code=400, detail="Invalid name")
     if path.exists():
         raise HTTPException(status_code=409, detail="Script already exists")
-    SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
+    scripts_dir.mkdir(parents=True, exist_ok=True)
     await asyncio.to_thread(path.write_text, content)
     await asyncio.to_thread(os.chmod, str(path), 0o755)
     return JSONResponse({"ok": True, "name": name})
@@ -202,7 +352,7 @@ async def create_library_entry(lib_name: str, request: Request, _: TokenAuth):
         sep = "" if existing.endswith("\n\n") else ("\n" if existing.endswith("\n") else "\n\n")
         await asyncio.to_thread(lib_path.write_text, existing + sep + full_key + "|" + template + "\n")
     else:
-        LIBRARIES_DIR.mkdir(parents=True, exist_ok=True)
+        config.get_libraries_dir().mkdir(parents=True, exist_ok=True)
         await asyncio.to_thread(lib_path.write_text, full_key + "|" + template + "\n")
     return JSONResponse({"ok": True})
 
@@ -248,6 +398,7 @@ async def start_job(request: Request, _: TokenAuth):
 
     if job_type == "script":
         name = body.get("name", "")
+        args_str = body.get("args", "").strip()
         path = resolve_script(name)
         content = await asyncio.to_thread(path.read_text)
         for k, v in params.items():
@@ -259,8 +410,9 @@ async def start_job(request: Request, _: TokenAuth):
             f.write(content)
             tmp_path = f.name
         os.chmod(tmp_path, 0o700)
+        args_list = shlex.split(args_str) if args_str else []
         proc = await asyncio.create_subprocess_exec(
-            "bash", tmp_path,
+            "bash", tmp_path, *args_list,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
@@ -357,6 +509,7 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
     try:
         data = json.loads(await websocket.receive_text())
         params = data.get("params", {})
+        args_str = data.get("args", "").strip()
 
         content = await asyncio.to_thread(script_path.read_text)
         for key, value in params.items():
@@ -370,11 +523,13 @@ async def run_script_interactive(websocket: WebSocket, script_name: str, token: 
             tmp_path = f.name
         os.chmod(tmp_path, 0o700)
 
+        args_list = shlex.split(args_str) if args_str else []
+        cmd_display = content + (" " + args_str if args_str else "")
         await _run_pty_session(
             websocket,
-            ["/bin/bash", tmp_path],
+            ["/bin/bash", tmp_path, *args_list],
             session_id,
-            {"name": script_name, "cat": None, "cmd": content},
+            {"name": script_name, "cat": None, "cmd": cmd_display},
         )
     except WebSocketDisconnect:
         pass
@@ -495,6 +650,7 @@ async def run_script_with_params(websocket: WebSocket, script_name: str, token: 
     try:
         data = json.loads(await websocket.receive_text())
         params = data.get("params", {})
+        args_str = data.get("args", "").strip()
 
         content = await asyncio.to_thread(script_path.read_text)
         for key, value in params.items():
@@ -509,12 +665,14 @@ async def run_script_with_params(websocket: WebSocket, script_name: str, token: 
             tmp_path = f.name
         os.chmod(tmp_path, 0o700)
 
+        args_list = shlex.split(args_str) if args_str else []
         proc = await asyncio.create_subprocess_exec(
-            "bash", tmp_path,
+            "bash", tmp_path, *args_list,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        await stream_proc(websocket, proc, session_id, {"name": script_name, "cat": None, "cmd": content})
+        cmd_display = content + (" " + args_str if args_str else "")
+        await stream_proc(websocket, proc, session_id, {"name": script_name, "cat": None, "cmd": cmd_display})
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
