@@ -155,6 +155,96 @@ async def refresh_smart_param(param_name: str, _: TokenAuth):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+_RIGHT_PANEL_CONFIG = Path("config/right_panel.json")
+
+
+def _load_right_panel_config() -> list:
+    if not _RIGHT_PANEL_CONFIG.exists():
+        return []
+    try:
+        data = json.loads(_RIGHT_PANEL_CONFIG.read_text())
+        return data if isinstance(data, list) else []
+    except Exception:
+        log.warning("Failed to parse right_panel.json")
+        return []
+
+
+@app.get("/api/right-panel")
+def get_right_panel(_: TokenAuth):
+    return JSONResponse(_load_right_panel_config())
+
+
+@app.get("/api/panel-files")
+def list_panel_files(_: TokenAuth, section: int, subpath: str = ""):
+    sections = _load_right_panel_config()
+    if section < 0 or section >= len(sections):
+        raise HTTPException(status_code=404, detail="Section not found")
+    sec = sections[section]
+    if sec.get("type") != "files":
+        raise HTTPException(status_code=400, detail="Not a files section")
+    dir_path = Path(sec.get("path", "")).resolve()
+    if subpath:
+        parts = [p for p in subpath.replace("\\", "/").split("/") if p]
+        if any(p == ".." for p in parts):
+            raise HTTPException(status_code=400, detail="Invalid path")
+        target = (dir_path / "/".join(parts)).resolve()
+        if not str(target).startswith(str(dir_path)):
+            raise HTTPException(status_code=403, detail="Access denied")
+    else:
+        target = dir_path
+    if not target.is_dir():
+        return JSONResponse([])
+    entries = []
+    for f in sorted(target.iterdir(), key=lambda x: (x.is_file(), x.name.lower())):
+        if f.name.startswith("."):
+            continue
+        entries.append({"name": f.name, "type": "dir" if f.is_dir() else "file"})
+    return JSONResponse(entries)
+
+
+def _resolve_panel_file(section: int, filepath: str):
+    """Shared validation — returns (file_path, dir_path) or raises HTTPException."""
+    sections = _load_right_panel_config()
+    if section < 0 or section >= len(sections):
+        raise HTTPException(status_code=404, detail="Section not found")
+    sec = sections[section]
+    if sec.get("type") != "files":
+        raise HTTPException(status_code=400, detail="Not a files section")
+    parts = [p for p in filepath.replace("\\", "/").split("/") if p]
+    if not parts or any(p == ".." for p in parts):
+        raise HTTPException(status_code=400, detail="Invalid path")
+    dir_path = Path(sec.get("path", "")).resolve()
+    file_path = (dir_path / "/".join(parts)).resolve()
+    if not str(file_path).startswith(str(dir_path) + "/"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return file_path
+
+
+@app.get("/api/panel-file")
+def get_panel_file(section: int, filepath: str, _: TokenAuth):
+    file_path = _resolve_panel_file(section, filepath)
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    MAX = 512 * 1024
+    raw = file_path.read_bytes()
+    text = raw[:MAX].decode("utf-8", errors="replace")
+    if len(raw) > MAX:
+        text += "\n\n[... truncated at 512 KB ...]"
+    return JSONResponse(text)
+
+
+@app.put("/api/panel-file")
+async def save_panel_file(section: int, filepath: str, request: Request, _: TokenAuth):
+    file_path = _resolve_panel_file(section, filepath)
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    content = await request.json()
+    if not isinstance(content, str):
+        raise HTTPException(status_code=400, detail="Content must be a string")
+    file_path.write_text(content, encoding="utf-8")
+    return JSONResponse({"ok": True})
+
+
 @app.get("/api/status")
 def list_status(_: TokenAuth):
     status_dir = config.get_status_dir()

@@ -3,6 +3,7 @@
     "KVNR": "A1234",
     "TENANT": "Brasov",
     "ENV": "prod",
-    "USER_ID": "asdfasd"
+    "USER_ID": "asdfasd",
+    "EMAIL": "aaa@bbb.com"
   }
 }
