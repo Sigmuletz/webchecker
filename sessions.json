@@ -1,36 +1,7 @@
 {
-  "KVSSF_X123456789": {
-    "KVNR": "X123456789",
-    "TENANT": "KVSSF",
-    "ENV": "PU",
-    "BOOL": "true"
-  },
-  "KVS_X123456789": {
-    "KVNR": "X123456789",
-    "TENANT": "KVS",
-    "ENV": "PU",
-    "USER_PROFIKE": "asdfasdfas",
-    "EMAIL": "aasdfsa@asdf.com"
-  },
-  "asdfasd_asdfasd": {
-    "KVNR": "asdfasd",
-    "TENANT": "asdfasd",
-    "ENV": "afsdfasd"
-  },
-  "Barmer_B12341": {
-    "KVNR": "B12341",
-    "TENANT": "Barmer",
-    "ENV": "ru-ref"
-  },
-  "TK_X981276123": {
-    "KVNR": "X981276123",
-    "TENANT": "TK",
-    "ENV": "ru-dev"
-  },
-  "BARMER_BASdASDAS": {
-    "KVNR": "BASdASDAS",
-    "TENANT": "BARMER",
-    "ENV": "PROD",
-    "URL": "www.google.com"
+  "Brasov_A1234": {
+    "KVNR": "A1234",
+    "TENANT": "Brasov",
+    "ENV": "prod"
   }
 }
