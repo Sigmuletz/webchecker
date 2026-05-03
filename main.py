@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from auth import TokenAuth, ws_auth
 import config
@@ -23,6 +24,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger(__name__)
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 BACKGROUND_JOBS: dict = {}
 _active_workspace_id: str = "default"
 _smart_params_cache: dict[str, list[str]] = {}
